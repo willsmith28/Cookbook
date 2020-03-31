@@ -1,0 +1,33 @@
+"""RecipeManager urls
+"""
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path("ingredient/", views.IngredientView.as_view(), name="ingredient"),
+    path(
+        "ingredient/<int:pk>/",
+        views.IngredientDetailView.as_view(),
+        name="ingredient-detail",
+    ),
+    path("tag/", views.TagView.as_view(), name="tag"),
+    path("tag/<int:pk>/", views.TagDetailView.as_view(), name="tag-detail"),
+    path("recipe/", views.RecipeView.as_view(), name="recipe"),
+    path("recipe/<int:pk>/", views.RecipeDetailView.as_view(), name="recipe-detail"),
+    path(
+        "recipe/<int:recipe_pk>/ingredients/",
+        views.RecipeIngredient.as_view(),
+        name="recipe-ingredients",
+    ),
+    path(
+        "recipe/<int:recipe_pk>/ingredients/<int:ingredient_pk>/",
+        views.RecipeIngredientDetail.as_view(),
+        name="recipe-ingredient-detail",
+    ),
+    path("recipe/<int:recipe_pk>/tags/", views.RecipeTag.as_view(), name="recipe-tags"),
+    path(
+        "recipe/<int:recipe_pk>/tags/<int:tag_pk>/",
+        views.RecipeTagDelete.as_view(),
+        name="recipe-tags-delete",
+    ),
+]
