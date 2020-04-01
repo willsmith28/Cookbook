@@ -172,8 +172,7 @@ def create_recipe(recipe: dict, author_id: Union[int, str]) -> models.Recipe:
         new_recipe.steps.create(**step)
 
     for tag in tags:
-        tag, _ = models.Tag.objects.get_or_create(value=tag["value"])
-        new_recipe.tags.add(tag)
+        new_recipe.tags.add(tag=models.Tag.objects.get(id=tag["id"]))
 
     return new_recipe
 
