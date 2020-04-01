@@ -192,7 +192,7 @@ class IngredientInRecipe(models.Model):
 
         unique_together = ("parent_recipe_id", "ingredient_id")
 
-    def to_json(self, with_ingredient_info=False):
+    def to_json(self):
         """returns json serializable dict representation of recipe_ingredient
 
         Returns:
@@ -205,11 +205,6 @@ class IngredientInRecipe(models.Model):
             "parent_recipe_id": int(self.parent_recipe_id),
             "ingredient_id": int(self.ingredient_id),
         }
-        if with_ingredient_info:
-            ingredient["name"] = str(self.ingredient.name)
-            ingredient["recipe_id"] = (
-                int(self.ingredient.recipe_id) if self.ingredient.recipe_id else None
-            )
 
         return ingredient
 
