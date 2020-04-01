@@ -156,19 +156,17 @@ def create_recipe(recipe: dict, author_id: Union[int, str]) -> models.Recipe:
     Returns:
         models.Recipe: [description]
     """
-    ingredients: List[dict] = recipe.pop("ingredients")
+    ingredients_in_recipe: List[dict] = recipe.pop("ingredients")
     steps: List[dict] = recipe.pop("steps")
     tags: List[dict] = recipe.pop("tags")
 
     new_recipe = models.Recipe.objects.create(author_id=author_id, **recipe)
 
-    for ingredient_in_recipe in ingredients:
-        ingredient, _ = models.Ingredient.objects.get_or_create(
-            name=ingredient_in_recipe.pop("name"),
-            defaults={"recipe_id": ingredient_in_recipe.pop("recipe_id", None)},
+    for ingredient_in_recipe in ingredients_in_recipe:
+        new_recipe.ingredients.add(
+            models.Ingredient.objects.get(id=ingredient_in_recipe.pop("ingredient_id")),
+            through_defaults=ingredient_in_recipe,
         )
-
-        new_recipe.ingredients.add(ingredient, through_defaults=ingredient_in_recipe)
 
     for step in steps:
         new_recipe.steps.create(**step)
