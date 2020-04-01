@@ -120,16 +120,7 @@ def validate_tags(tags: Sequence[dict]) -> List[str]:
     return errors
 
 
-
-
-
-
-
-
-
-def create_recipe(
-    recipe: dict, author_id: Union[int, str], eager_load_relations=False,
-) -> models.Recipe:
+def create_recipe(recipe: dict, author_id: Union[int, str]) -> models.Recipe:
     """Create a new recipe with its relationships
 
     Args:
@@ -140,35 +131,26 @@ def create_recipe(
     Returns:
         models.Recipe: [description]
     """
-    ingredients = recipe.pop("ingredients")
-    steps = recipe.pop("steps")
-    tags = recipe.pop("tags")
+    ingredients: List[dict] = recipe.pop("ingredients")
+    steps: List[dict] = recipe.pop("steps")
+    tags: List[dict] = recipe.pop("tags")
 
     new_recipe = models.Recipe.objects.create(author_id=author_id, **recipe)
 
-    for recipe_ingredient in ingredients:
+    for ingredient_in_recipe in ingredients:
         ingredient, _ = models.Ingredient.objects.get_or_create(
-            name=recipe_ingredient.pop("name"),
-            defaults={"recipe_id": recipe_ingredient.pop("recipe_id", None)},
+            name=ingredient_in_recipe.pop("name"),
+            defaults={"recipe_id": ingredient_in_recipe.pop("recipe_id", None)},
         )
 
-        models.IngredientInRecipe.objects.create(
-            parent_recipe=new_recipe, ingredient=ingredient, **recipe_ingredient
-        )
+        new_recipe.ingredients.add(ingredient, through_defaults=ingredient_in_recipe)
 
     for step in steps:
-        models.Step.objects.create(recipe=new_recipe, **step)
+        new_recipe.steps.create(**step)
 
     for tag in tags:
         tag, _ = models.Tag.objects.get_or_create(value=tag["value"])
         new_recipe.tags.add(tag)
-
-    new_recipe.save()
-
-    if eager_load_relations:
-        new_recipe = models.Recipe.objects.prefetch_related("steps", "tags").get(
-            id=new_recipe.id
-        )
 
     return new_recipe
 
