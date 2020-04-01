@@ -120,27 +120,11 @@ def validate_tags(tags: Sequence[dict]) -> List[str]:
     return errors
 
 
-def serialize_recipe_with_relationships(recipe: models.Recipe) -> dict:
-    """create a json serializable representation of a Recipe with its relationships
 
-    Args:
-        recipe (models.Recipe): [description]
 
-    Returns:
-        dict: [description]
-    """
-    ingredients_in_recipe = models.IngredientInRecipe.objects.select_related(
-        "ingredient"
-    ).filter(parent_recipe_id=recipe.id)
 
-    serialized_recipe = recipe.to_json(with_tags=True, with_steps=True)
 
-    serialized_recipe["ingredients"] = tuple(
-        ingredient.to_json(with_ingredient_info=True)
-        for ingredient in ingredients_in_recipe
-    )
 
-    return serialized_recipe
 
 
 def create_recipe(
