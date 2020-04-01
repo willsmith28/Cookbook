@@ -440,7 +440,7 @@ class RecipeIngredient(APIView):
         recipe_ingredient = request.data
 
         errors = []
-        for field in constants.REQUIRED_RECIPE_INGREDIENT_FIELDS:
+        for field in constants.REQUIRED_INGREDIENT_IN_RECIPE_FIELDS:
             if field not in recipe_ingredient:
                 errors.append(f"{field} is a required field")
 

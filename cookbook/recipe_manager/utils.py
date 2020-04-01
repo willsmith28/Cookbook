@@ -85,7 +85,7 @@ def validate_recipe_ingredients(ingredients: Sequence[dict]) -> List[str]:
         if any(
             field not in ingredient
             for ingredient in ingredients
-            for field in constants.REQUIRED_RECIPE_INGREDIENT_FIELDS
+            for field in constants.REQUIRED_INGREDIENT_IN_RECIPE_FIELDS
         ):
             errors.append("An included recipe ingredient is missing a required field")
 

@@ -1,11 +1,19 @@
 """constants for RecipeManger
 """
-REQUIRED_RECIPE_INGREDIENT_FIELDS = (
+REQUIRED_INGREDIENT_FIELDS = ("name", "recipe_id")
+
+REQUIRED_RECIPE_FIELDS = (
+    "name",
+    "description",
+    "servings",
+    "cook_time",
+)
+
+REQUIRED_INGREDIENT_IN_RECIPE_FIELDS = (
     "amount",
     "unit",
     "specifier",
-    "name",
-    "recipe_id",
+    "ingredient_id",
 )
 
 REQUIRED_STEP_FIELDS = (
