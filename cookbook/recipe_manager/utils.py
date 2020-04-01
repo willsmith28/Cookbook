@@ -8,6 +8,23 @@ from . import models, constants
 
 def validate_recipe(recipe: dict) -> List[str]:
     """check if a recipe is valid. includes ingredients step and tag validation
+    {
+        name: str
+        description: str
+        servings: int
+        cook_time: str,
+        ingredients: [{
+            amount: decimal,
+            unit: str,
+            specifier: str,
+            ingredient_id: (int, str)
+        }, ...]
+        steps: [{
+            'order': int,
+            'instruction': str,
+        }, ...]
+        tags: [int, ...]
+    }
 
     Args:
         recipe (dict): dict representation of a recipe
@@ -20,13 +37,20 @@ def validate_recipe(recipe: dict) -> List[str]:
         if field not in recipe:
             errors.append(f"{field} is a required field")
 
-    errors.extend(
-        (
-            *validate_recipe_ingredients(recipe.get("ingredients")),
-            *validate_recipe_steps(recipe.get("steps")),
-            *validate_tags(recipe.get("tags", ())),
-        )
-    )
+    try:
+        errors.extend(validate_recipe_ingredients(recipe.get("ingredients")))
+    except KeyError:
+        errors.append("ingredients is a required field")
+
+    try:
+        errors.extend(validate_recipe_steps(recipe.get("steps")))
+    except KeyError:
+        errors.append("steps is a required field")
+
+    try:
+        errors.extend(validate_tags(recipe.get("tags", ())))
+    except KeyError:
+        errors.append("tags is a required field")
 
     return errors
 
@@ -150,28 +174,41 @@ def create_recipe(recipe: dict, author_id: Union[int, str]) -> models.Recipe:
     Args:
         recipe (dict): dict representation of recipe to make
         user_id (Union[int, str]): user id for author
-        eager_load_relations (bool, optional): eager load tags and steps. Defaults to False.
 
     Returns:
-        models.Recipe: [description]
+        models.Recipe: newly created Recipe
     """
-    ingredients_in_recipe: List[dict] = recipe.pop("ingredients")
-    steps: List[dict] = recipe.pop("steps")
-    tags: List[dict] = recipe.pop("tags")
+    ingredients_in_recipe = recipe.pop("ingredients")
+    steps = recipe.pop("steps")
+    tags = recipe.pop("tags")
 
-    new_recipe = models.Recipe.objects.create(author_id=author_id, **recipe)
+    new_recipe = models.Recipe.objects.create(
+        author_id=author_id,
+        **{field: recipe[field] for field in constants.REQUIRED_RECIPE_FIELDS},
+    )
 
     for ingredient_in_recipe in ingredients_in_recipe:
+        ingredient = {
+            field: ingredient_in_recipe[field]
+            for field in constants.REQUIRED_INGREDIENT_IN_RECIPE_FIELDS
+        }
         new_recipe.ingredients.add(
-            models.Ingredient.objects.get(id=ingredient_in_recipe.pop("ingredient_id")),
-            through_defaults=ingredient_in_recipe,
+            models.Ingredient.objects.get(id=ingredient.pop("ingredient_id")),
+            through_defaults=ingredient,
         )
 
     for step in steps:
-        new_recipe.steps.create(**step)
+        new_recipe.steps.create(
+            **{field: step[field] for field in constants.REQUIRED_STEP_FIELDS}
+        )
 
-    for tag in tags:
-        new_recipe.tags.add(tag=models.Tag.objects.get(id=tag["id"]))
+    for tag_id in tags:
+        try:
+            tag = models.Tag.objects.get(id=tag_id)
+        except models.Tag.DoesNotExist:
+            pass
+        else:
+            new_recipe.tags.add(tag=tag)
 
     return new_recipe
 
