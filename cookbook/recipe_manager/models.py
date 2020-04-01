@@ -133,7 +133,7 @@ class Recipe(models.Model):
         }
 
         if with_tags:
-            recipe["tags"] = tuple(tag.to_json() for tag in self.tags.all())
+            recipe["tags"] = tuple(tag.id for tag in self.tags.only("id").all())
 
         if with_steps:
             recipe["steps"] = tuple(step.to_json() for step in self.steps.all())
