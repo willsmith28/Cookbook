@@ -122,8 +122,8 @@ def validate_recipe_ingredients(ingredients: Sequence[dict]) -> List[str]:
     return errors
 
 
-def validate_tags(tags: Sequence[dict]) -> List[str]:
-    """validates provided tags
+def validate_tags(tags: Sequence[str, int]) -> List[str]:
+    """validates provided tag IDs
     returns list of errors or empty list if no errors.
     ingredients should be as exampled below
 
@@ -133,14 +133,13 @@ def validate_tags(tags: Sequence[dict]) -> List[str]:
     Returns:
         List[str]: list of errors
     """
-    required_field = "value"
     errors = []
     try:
-        if any(required_field not in tag for tag in tags):
-            errors.append("an Included tag is missing the its 'value' field")
+        if any(not isinstance(tag_id, (str, int)) for tag_id in tags):
+            errors.append("tag ID must be either a string or an integer")
 
     except TypeError:
-        errors.append("tags must be a list")
+        errors.append("tags must be a list of tag IDs")
 
     return errors
 
