@@ -219,8 +219,8 @@ class IngredientInRecipe(models.Model):
     def __repr__(self):
         return (
             f"<IngredientInRecipe: {self.id} "
-            f"ingredient_id: {self.ingredient_id} amount: {self.amount} "
-            f"unit: {self.unit}>"
+            f"ingredient_id: {self.ingredient_id} parent_recipe_id: {self.parent_recipe} "
+            f"amount: {self.amount} unit: {self.unit}>"
         )
 
 
