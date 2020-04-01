@@ -101,9 +101,9 @@ def validate_recipe_steps(steps: Sequence[dict]) -> List[str]:
         if not steps:
             errors.append("Recipe must have at least one step.")
         elif not _step_order_valid(steps):
-            errors.append('"steps" must be sequential.')
+            errors.append('"steps" must have sequential order.')
     except TypeError:
-        errors.append('"steps" must be a list of steps')
+        errors.append("steps must be a list of steps")
 
     return errors
 
@@ -117,8 +117,7 @@ def validate_recipe_ingredients(ingredients: Sequence[dict]) -> List[str]:
             amount: decimal,
             unit: str,
             specifier: str,
-            name: str,
-            recipe_id: (int, str, None)
+            ingredient_id: (int, str)
         }
     ]
 
@@ -141,7 +140,7 @@ def validate_recipe_ingredients(ingredients: Sequence[dict]) -> List[str]:
         if not ingredients:
             errors.append("Recipe must have at least one ingredient")
     except TypeError:
-        errors.append('"ingredients" must be a list')
+        errors.append("ingredients must be a list")
 
     return errors
 
