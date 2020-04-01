@@ -254,6 +254,7 @@ class Step(models.Model):
             dict: the step in dictionary form
         """
         return {
+            "id": int(self.id),
             "order": int(self.order),
             "instruction": str(self.instruction),
             "recipe_id": int(self.recipe_id),
