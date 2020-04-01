@@ -173,7 +173,7 @@ def update_steps(recipe: models.Recipe, new_steps: Iterable[dict]):
                 db_step.save()
 
         elif db_step is None and new_step is not None:
-            models.Step.objects.create(recipe=recipe, **new_step)
+            recipe.steps.create(recipe=recipe, **new_step)
 
         elif db_step is not None and new_step is None:
-            db_step.delete()
+            recipe.steps.remove(db_step)
