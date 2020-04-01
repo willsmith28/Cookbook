@@ -6,6 +6,31 @@ from typing import Iterable, List, Sequence, Union
 from . import models, constants
 
 
+def validate_recipe(recipe: dict) -> List[str]:
+    """check if a recipe is valid. includes ingredients step and tag validation
+
+    Args:
+        recipe (dict): dict representation of a recipe
+
+    Returns:
+        List[str]: list of errors
+    """
+    errors = []
+    for field in constants.REQUIRED_RECIPE_FIELDS:
+        if field not in recipe:
+            errors.append(f"{field} is a required field")
+
+    errors.extend(
+        (
+            *validate_recipe_ingredients(recipe.get("ingredients")),
+            *validate_recipe_steps(recipe.get("steps")),
+            *validate_tags(recipe.get("tags", ())),
+        )
+    )
+
+    return errors
+
+
 def _step_order_valid(steps: Iterable[dict]) -> bool:
     """Validates that the given steps have 'order' attributes that are sequence 1..n
 
