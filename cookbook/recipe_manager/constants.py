@@ -15,8 +15,3 @@ REQUIRED_INGREDIENT_IN_RECIPE_FIELDS = (
     "specifier",
     "ingredient_id",
 )
-
-REQUIRED_STEP_FIELDS = (
-    "order",
-    "instruction",
-)
