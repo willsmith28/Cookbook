@@ -86,8 +86,11 @@ def validate_recipe_steps(steps: Iterable[dict]) -> Tuple[str]:
     errors = ()
 
     try:
-        if any("instruction" not in step for step in steps):
-            errors = ("instruction is a required field for step.",)
+        if all(isinstance(step, dict) for step in steps):
+            if any("instruction" not in step for step in steps):
+                errors = ("instruction is a required field for step.",)
+        else:
+            raise TypeError
 
     except TypeError:
         errors = ("steps must be a list of steps",)
@@ -116,21 +119,26 @@ def validate_recipe_ingredients(ingredients: Iterable[dict]) -> Tuple[str]:
     """
 
     try:
-        errors = {
-            err_msg
-            for ingredient in ingredients
-            for err_msg in validate_required_fields(
-                ingredient, constants.REQUIRED_INGREDIENT_IN_RECIPE_FIELDS
+        if all(isinstance(ingredient, dict) for ingredient in ingredients):
+            errors = tuple(
+                {
+                    err_msg
+                    for ingredient in ingredients
+                    for err_msg in validate_required_fields(
+                        ingredient, constants.REQUIRED_INGREDIENT_IN_RECIPE_FIELDS
+                    )
+                }
             )
-        }
+        else:
+            raise TypeError
 
     except TypeError:
         errors = (
-            "ingredients must be a list of objects with "
+            "ingredients in a Recipe must be a list of objects with "
             "ingredient_id, amount, unit, and specifier.",
         )
 
-    return tuple(errors)
+    return errors
 
 
 def validate_tags(tags: Iterable[Union[str, int]]) -> Tuple[str]:
