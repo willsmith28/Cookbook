@@ -44,15 +44,13 @@ class IngredientTestCase(TestCase):
         self.ingredient2 = baker.make(models.Ingredient)
         self.ingredient3 = baker.make(models.Ingredient)
 
-        self.ingredients = [self.ingredient1, self.ingredient2, self.ingredient3]
-
     def test_get_ingredients_list(self):
         """
         GET /ingredient/
         """
         response = self.client.get(reverse("ingredient"))
         response_data = response.json()
-        self.assertEqual(len(response_data), len(self.ingredients))
+        self.assertEqual(len(response_data), models.Ingredient.objects.count())
 
     def test_post_ingredient(self):
         """
@@ -72,7 +70,7 @@ class IngredientTestCase(TestCase):
 
     def test_post_ingredient_already_exists(self):
         """
-        POST /ingredient/
+        POST /ingredient/ unique conflict
         """
         token = get_token()
         test_ingredient = {"name": "chicken", "recipe_id": None}
@@ -101,6 +99,7 @@ class IngredientTestCase(TestCase):
         )
         response_data = response.json()
         self.assertEqual(response_data["id"], self.ingredient1.id)
+        self.assertIn("name", response.json())
 
 
 class TagTestCase(TestCase):
@@ -116,15 +115,13 @@ class TagTestCase(TestCase):
         self.tag2 = baker.make(models.Tag)
         self.tag3 = baker.make(models.Tag)
 
-        self.tags = [self.tag1, self.tag2, self.tag3]
-
     def test_get_tag_list(self):
         """
         GET /tag/
         """
         response = self.client.get(reverse("tag"))
         response_data = response.json()
-        self.assertEqual(len(response_data), len(self.tags))
+        self.assertEqual(len(response_data), models.Tag.objects.count())
 
     def test_tag_post(self):
         """
@@ -339,6 +336,37 @@ class RecipeTestCase(TestCase):
         )
         self.assertEqual(response.status_code, 403)
 
+
+class RecipeIngredientCase(TestCase):
+    """Tests for /recipe/<recipe_pk>/ingredients/
+    """
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            TEST_USER_NAME, email=TEST_EMAIL, password=TEST_PASSWORD
+        )
+        User.objects.create_user(
+            TEST_USER_NAME1, email=TEST_EMAIL1, password=TEST_PASSWORD
+        )
+
+        ingredient_set = baker.prepare(models.Ingredient, _quantity=5)
+        self.recipe1 = baker.make(
+            models.Recipe,
+            # make_m2m=True,
+            ingredients=ingredient_set,
+            servings=seq(5),
+            author=self.user,
+        )
+
+        self.ingredient1 = baker.make(models.Ingredient, recipe_id=None)
+
+        self.test_recipe_ingredient = {
+            "unit": "tsp",
+            "amount": 0.5,
+            "specifier": "",
+            "ingredient_id": int(self.ingredient1.id),
+        }
+
     def test_recipe_ingredient_get_list(self):
         """
         GET /recipe/<int:pk>/ingredients/
@@ -475,6 +503,28 @@ class RecipeTestCase(TestCase):
             self.recipe1.ingredients.count(), recipe_ingredient_count_pre_delete - 1
         )
 
+
+class RecipeStepsCase(TestCase):
+    """Tests for /recipe/<recipe_pk>/steps/
+    """
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            TEST_USER_NAME, email=TEST_EMAIL, password=TEST_PASSWORD
+        )
+        User.objects.create_user(
+            TEST_USER_NAME1, email=TEST_EMAIL1, password=TEST_PASSWORD
+        )
+
+        steps = [models.Step(order=i + 1, instruction="do thing") for i in range(5)]
+        self.recipe1 = baker.make(
+            models.Recipe,
+            # make_m2m=True,
+            steps=steps,
+            servings=seq(5),
+            author=self.user,
+        )
+
     def test_get_recipe_steps(self):
         """
         GET /recipe/<int:recipe_pk>/steps/
@@ -486,12 +536,7 @@ class RecipeTestCase(TestCase):
             HTTP_AUTHORIZATION=f"Token {token}",
         )
         response_data = response.json()
-        self.assertEqual(
-            len(response_data),
-            models.IngredientInRecipe.objects.filter(
-                parent_recipe_id=self.recipe1.id
-            ).count(),
-        )
+        self.assertEqual(len(response_data), self.recipe1.steps.count())
 
     def test_add_step_to_recipe(self):
         """
