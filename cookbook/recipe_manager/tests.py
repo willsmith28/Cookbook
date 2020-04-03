@@ -466,6 +466,34 @@ class RecipeIngredientCase(TestCase):
 
         self.assertEqual(response.status_code, 201)
 
+    def test_add_recipe_ingredient_post_invalid_id(self):
+        """
+        POST /recipe/<int:pk>/ingredients/
+        """
+        token = get_token()
+        response = self.client.post(
+            reverse("recipe-ingredients", kwargs={"recipe_pk": self.recipe1.id}),
+            {**self.test_recipe_ingredient, "ingredient_id": 34},
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Token {token}",
+        )
+
+        self.assertEqual(response.status_code, 400)
+
+    def test_add_recipe_ingredient_post_invalid_data(self):
+        """
+        POST /recipe/<int:pk>/ingredients/
+        """
+        token = get_token()
+        response = self.client.post(
+            reverse("recipe-ingredients", kwargs={"recipe_pk": self.recipe1.id}),
+            {**self.test_recipe_ingredient, "unit": None},
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Token {token}",
+        )
+
+        self.assertEqual(response.status_code, 400)
+
     def test_recipe_ingredient_different_user_post(self):
         """
         POST /recipe/<int:pk>/ingredients/
@@ -713,3 +741,77 @@ class RecipeTagTest(TestCase):
             author=self.user,
             tags=tag_set,
         )
+
+        self.tag1 = baker.make(models.Tag)
+
+    def test_get_recipe_tags(self):
+        """
+        GET /recipe/<recipe_pk>/tags/
+        """
+        token = get_token()
+        response = self.client.get(
+            reverse("recipe-tags", kwargs={"recipe_pk": self.recipe1.id},),
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Token {token}",
+        )
+        self.assertEqual(len(response.json()), self.recipe1.tags.count())
+
+    def test_add_tag_to_recipe(self):
+        """
+        POST /recipe/<recipe_pk>/tags/
+        """
+        token = get_token()
+        response = self.client.post(
+            reverse("recipe-tags", kwargs={"recipe_pk": self.recipe1.id},),
+            {"id": self.tag1.id},
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Token {token}",
+        )
+        self.assertEqual(response.status_code, 201)
+
+    def test_add_new_tag_to_recipe(self):
+        """
+        POST /recipe/<recipe_pk>/tags/
+        """
+        token = get_token()
+        response = self.client.post(
+            reverse("recipe-tags", kwargs={"recipe_pk": self.recipe1.id},),
+            {"value": "new tag"},
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Token {token}",
+        )
+        self.assertEqual(response.status_code, 201)
+
+    def test_add_tag_doesnt_exit_to_recipe(self):
+        """
+        POST /recipe/<recipe_pk>/tags/
+        """
+        token = get_token()
+        response = self.client.post(
+            reverse("recipe-tags", kwargs={"recipe_pk": self.recipe1.id},),
+            {"id": 38},
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Token {token}",
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_delete_tag_from_recipe(self):
+        """
+        DELETE /recipe/<recipe_pk>/tags/
+        """
+        token = get_token()
+        tag_count_before_delete = self.recipe1.tags.all().count()
+        response = self.client.delete(
+            reverse(
+                "recipe-tags-delete",
+                kwargs={
+                    "recipe_pk": self.recipe1.id,
+                    "tag_pk": self.recipe1.tags.all().first().id,
+                },
+            ),
+            {"id": 38},
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Token {token}",
+        )
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual(self.recipe1.tags.all().count(), tag_count_before_delete - 1)
