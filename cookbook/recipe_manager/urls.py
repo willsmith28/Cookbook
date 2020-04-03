@@ -24,6 +24,14 @@ urlpatterns = [
         views.RecipeIngredientDetail.as_view(),
         name="recipe-ingredient-detail",
     ),
+    path(
+        "recipe/<int:recipe_pk>/steps/", views.RecipeStep.as_view(), name="recipe-steps"
+    ),
+    path(
+        "recipe/<int:recipe_pk>/steps/<int:step_pk>/",
+        views.RecipeStepDetail.as_view(),
+        name="recipe-step-detail",
+    ),
     path("recipe/<int:recipe_pk>/tags/", views.RecipeTag.as_view(), name="recipe-tags"),
     path(
         "recipe/<int:recipe_pk>/tags/<int:tag_pk>/",
