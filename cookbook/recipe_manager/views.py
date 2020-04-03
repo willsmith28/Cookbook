@@ -27,11 +27,12 @@ class IngredientView(APIView):
         Returns:
             Response: DRF Response
         """
-        ingredients = tuple(
-            ingredient.to_json() for ingredient in models.Ingredient.objects.all()
+        return Response(
+            tuple(
+                ingredient.to_json() for ingredient in models.Ingredient.objects.all()
+            ),
+            status=status.HTTP_200_OK,
         )
-
-        return Response(ingredients, status=status.HTTP_200_OK)
 
     def post(self, request):
         """Create new Ingredient
@@ -110,9 +111,10 @@ class TagView(APIView):
         Returns:
             Response: DRF Response
         """
-        tags = tuple(tag.to_json() for tag in models.Tag.objects.all())
-
-        return Response(tags, status=status.HTTP_200_OK)
+        return Response(
+            tuple(tag.to_json() for tag in models.Tag.objects.all()),
+            status=status.HTTP_200_OK,
+        )
 
     def post(self, request):
         """
@@ -211,10 +213,11 @@ class RecipeView(APIView):
         Returns:
             Response: DRF Response
         """
-        recipes = models.Recipe.objects.prefetch_related("tags").all()
-
         return Response(
-            tuple(recipe.to_json(with_tags=True) for recipe in recipes),
+            tuple(
+                recipe.to_json(with_tags=True)
+                for recipe in models.Recipe.objects.prefetch_related("tags").all()
+            ),
             status=status.HTTP_200_OK,
         )
 
@@ -406,12 +409,13 @@ class RecipeIngredient(APIView):
             )
 
         else:
-            ingredients = models.IngredientInRecipe.objects.filter(
-                parent_recipe_id=recipe.id
-            )
-
             response = Response(
-                tuple(ingredient.to_json() for ingredient in ingredients),
+                tuple(
+                    ingredient.to_json()
+                    for ingredient in models.IngredientInRecipe.objects.filter(
+                        parent_recipe_id=recipe.id
+                    )
+                ),
                 status=status.HTTP_200_OK,
             )
 
