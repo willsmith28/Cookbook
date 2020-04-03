@@ -1,12 +1,38 @@
 """Common functionality like creating and validating models
 """
-import operator
-import itertools
-from typing import Iterable, List, Sequence, Union
+from typing import List, Iterable, Union, Tuple
 from . import models, constants
 
 
-def validate_recipe(recipe: dict) -> List[str]:
+def validate_required_fields(item: dict, required_fields: Iterable[str]) -> Tuple[str]:
+    """Validate that all required fields are in the provided item
+
+    Args:
+        item (dict): item to validate
+        required_fields (Iterable[str]): fields to check object for
+
+    Returns:
+        Tuple[str]: list of x is a required field messages
+    """
+    return tuple(
+        f"{field} is a required field" for field in required_fields if field not in item
+    )
+
+
+def extract_required_fields(item: dict, required_fields: Iterable[str]) -> dict:
+    """returns a new dictionary with only the required fields
+
+    Args:
+        item (dict): item to strip fields from
+        required_fields (Iterable[str]): list of fields to be in new dictionary
+
+    Returns:
+        dict: dictionary containing the fields
+    """
+    return {field: item.get(field) for field in required_fields}
+
+
+def validate_recipe(recipe: dict) -> Tuple[str]:
     """check if a recipe is valid. includes ingredients step and tag validation
     {
         name: str
@@ -30,48 +56,17 @@ def validate_recipe(recipe: dict) -> List[str]:
         recipe (dict): dict representation of a recipe
 
     Returns:
-        List[str]: list of errors
+        Tuple[str]: list of errors
     """
-    errors = []
-    for field in constants.REQUIRED_RECIPE_FIELDS:
-        if field not in recipe:
-            errors.append(f"{field} is a required field")
-
-    try:
-        errors.extend(validate_recipe_ingredients(recipe.get("ingredients")))
-    except KeyError:
-        errors.append("ingredients is a required field")
-
-    try:
-        errors.extend(validate_recipe_steps(recipe.get("steps")))
-    except KeyError:
-        errors.append("steps is a required field")
-
-    try:
-        errors.extend(validate_tags(recipe.get("tags", ())))
-    except KeyError:
-        errors.append("tags is a required field")
-
-    return errors
+    return (
+        *validate_required_fields(recipe, constants.REQUIRED_RECIPE_FIELDS),
+        *validate_recipe_steps(recipe.get("step", ())),
+        *validate_recipe_ingredients(recipe.get("ingredients", ())),
+        *validate_tags(recipe.get("tags", ())),
+    )
 
 
-def _step_order_valid(steps: Iterable[dict]) -> bool:
-    """Validates that the given steps have 'order' attributes that are sequence 1..n
-
-    Args:
-        steps (Iterable[dict]): a collection of steps
-
-    Returns:
-        bool: true if steps are valid
-    """
-    for index, step in enumerate(sorted(steps, key=operator.itemgetter("order"))):
-        if step["order"] != index + 1:
-            return False
-
-    return True
-
-
-def validate_recipe_steps(steps: Sequence[dict]) -> List[str]:
+def validate_recipe_steps(steps: Iterable[dict]) -> Tuple[str]:
     """Validates provided steps.
     returns list of errors or empty list if no errors.
     steps should be as exampled below
@@ -83,32 +78,24 @@ def validate_recipe_steps(steps: Sequence[dict]) -> List[str]:
     ]
 
     Args:
-        steps (Sequence[dict]): steps in recipe
+        steps (Iterable[dict]): steps in recipe
 
     Returns:
-        List[str]: list of errors
+        Tuple[str]: list of errors
     """
-    errors = []
+    errors = ()
 
     try:
-        if any(
-            field not in step
-            for step in steps
-            for field in constants.REQUIRED_STEP_FIELDS
-        ):
-            errors.append("An included step is missing a field")
+        if any("instruction" not in step for step in steps):
+            errors = ("instruction is a required field for step.",)
 
-        if not steps:
-            errors.append("Recipe must have at least one step.")
-        elif not _step_order_valid(steps):
-            errors.append('"steps" must have sequential order.')
     except TypeError:
-        errors.append("steps must be a list of steps")
+        errors = ("steps must be a list of steps",)
 
     return errors
 
 
-def validate_recipe_ingredients(ingredients: Sequence[dict]) -> List[str]:
+def validate_recipe_ingredients(ingredients: Iterable[dict]) -> Tuple[str]:
     """validates provided ingredients
     returns list of errors or empty list if no errors.
     ingredients should be as exampled below
@@ -122,36 +109,37 @@ def validate_recipe_ingredients(ingredients: Sequence[dict]) -> List[str]:
     ]
 
     Args:
-        ingredients (Sequence[dict]): ingredients in recipe
+        ingredients (Iterable[dict]): ingredients in recipe
 
     Returns:
-        List[str]: list of errors
+        Tuple[str]: list of errors
     """
-    errors = []
 
     try:
-        if any(
-            field not in ingredient
+        errors = {
+            err_msg
             for ingredient in ingredients
-            for field in constants.REQUIRED_INGREDIENT_IN_RECIPE_FIELDS
-        ):
-            errors.append("An included recipe ingredient is missing a required field")
+            for err_msg in validate_required_fields(
+                ingredient, constants.REQUIRED_INGREDIENT_IN_RECIPE_FIELDS
+            )
+        }
 
-        if not ingredients:
-            errors.append("Recipe must have at least one ingredient")
     except TypeError:
-        errors.append("ingredients must be a list")
+        errors = (
+            "ingredients must be a list of objects with "
+            "ingredient_id, amount, unit, and specifier.",
+        )
 
-    return errors
+    return tuple(errors)
 
 
-def validate_tags(tags: Sequence[str, int]) -> List[str]:
+def validate_tags(tags: Iterable[Union[str, int]]) -> List[str]:
     """validates provided tag IDs
     returns list of errors or empty list if no errors.
     ingredients should be as exampled below
 
     Args:
-        tags (Sequence[dict]): list of tags
+        tags (Iterable[Union[str, int]]): list of IDs
 
     Returns:
         List[str]: list of errors
@@ -177,60 +165,32 @@ def create_recipe(recipe: dict, author_id: Union[int, str]) -> models.Recipe:
     Returns:
         models.Recipe: newly created Recipe
     """
-    ingredients_in_recipe = recipe.pop("ingredients")
-    steps = recipe.pop("steps")
-    tags = recipe.pop("tags")
+    ingredients_in_recipe = recipe.pop("ingredients", ())
+    steps = recipe.pop("steps", ())
+    tags = recipe.pop("tags", ())
 
     new_recipe = models.Recipe.objects.create(
         author_id=author_id,
-        **{field: recipe[field] for field in constants.REQUIRED_RECIPE_FIELDS},
+        **extract_required_fields(recipe, constants.REQUIRED_RECIPE_FIELDS),
     )
 
     for ingredient_in_recipe in ingredients_in_recipe:
-        ingredient = {
-            field: ingredient_in_recipe[field]
-            for field in constants.REQUIRED_INGREDIENT_IN_RECIPE_FIELDS
-        }
+        ingredient = extract_required_fields(
+            ingredient_in_recipe, constants.REQUIRED_INGREDIENT_IN_RECIPE_FIELDS
+        )
         new_recipe.ingredients.add(
             models.Ingredient.objects.get(id=ingredient.pop("ingredient_id")),
             through_defaults=ingredient,
         )
 
-    for step in steps:
-        new_recipe.steps.create(
-            **{field: step[field] for field in constants.REQUIRED_STEP_FIELDS}
-        )
+    for index, step in enumerate(steps):
+        new_recipe.steps.create(instruction=step["instruction"], order=index + 1)
 
     for tag_id in tags:
         try:
             tag = models.Tag.objects.get(id=tag_id)
+            new_recipe.tags.add(tag)
         except models.Tag.DoesNotExist:
             pass
-        else:
-            new_recipe.tags.add(tag=tag)
 
     return new_recipe
-
-
-def update_steps(recipe: models.Recipe, new_steps: Iterable[dict]):
-    """makes Recipe steps match the provided new steps
-
-    Args:
-        recipe (models.Recipe): Recipe to have steps updated
-        new_steps (Iterable[dict]): list of new steps
-    """
-    steps = itertools.zip_longest(
-        recipe.steps.all(), sorted(new_steps, key=operator.itemgetter("order"))
-    )
-    for db_step, new_step in steps:
-        if db_step is not None and new_step is not None:
-            assert db_step.order == new_step["order"]
-            if db_step.instruction != new_step["instruction"]:
-                db_step.instruction = new_step["instruction"]
-                db_step.save()
-
-        elif db_step is None and new_step is not None:
-            recipe.steps.create(recipe=recipe, **new_step)
-
-        elif db_step is not None and new_step is None:
-            recipe.steps.remove(db_step)
