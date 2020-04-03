@@ -1,6 +1,6 @@
 """Common functionality like creating and validating models
 """
-from typing import List, Iterable, Union, Tuple
+from typing import Iterable, Union, Tuple
 from . import models, constants
 
 
