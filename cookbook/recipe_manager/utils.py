@@ -60,7 +60,7 @@ def validate_recipe(recipe: dict) -> Tuple[str]:
     """
     return (
         *validate_required_fields(recipe, constants.REQUIRED_RECIPE_FIELDS),
-        *validate_recipe_steps(recipe.get("step", ())),
+        *validate_recipe_steps(recipe.get("steps", ())),
         *validate_recipe_ingredients(recipe.get("ingredients", ())),
         *validate_tags(recipe.get("tags", ())),
     )
