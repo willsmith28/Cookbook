@@ -195,7 +195,7 @@ class RecipeTestCase(TestCase):
 
         self.ingredient1 = baker.make(models.Ingredient, recipe_id=None)
 
-        self.test_recipe = {
+        self.test_valid_recipe = {
             "name": "some name",
             "description": "some description",
             "servings": 4,
@@ -211,12 +211,14 @@ class RecipeTestCase(TestCase):
             "steps": [{"instruction": "cut chicken"}, {"instruction": "cook chicken"},],
             "tags": [int(tag.id) for tag in tag_set],
         }
-
-        self.test_recipe_ingredient = {
-            "unit": "tsp",
-            "amount": 0.5,
-            "specifier": "",
-            "ingredient_id": int(self.ingredient1.id),
+        self.test_invalid_recipe = {
+            "name": "",
+            "description": "some description",
+            "servings": "3",
+            "cook_time": "1  hour",
+            "ingredients": 23,
+            "steps": "step",
+            "tags": 3,
         }
 
     def test_get_recipe_list(self):
@@ -228,20 +230,93 @@ class RecipeTestCase(TestCase):
         recipes = response.json()
         self.assertEqual(len(recipes), models.Recipe.objects.count())
 
-    def test_post_recipe(self):
+    def test_post_valid_recipe_with_relations(self):
         """
-        POST /recipe/
+        POST /recipe/ valid data
         """
         token = get_token()
         response = self.client.post(
             reverse("recipe"),
-            self.test_recipe,
+            self.test_valid_recipe,
             content_type="application/json",
             HTTP_AUTHORIZATION=f"Token {token}",
         )
         response_data = response.json()
-        recipe_from_db = models.Recipe.objects.get(name=self.test_recipe["name"])
+        recipe_from_db = models.Recipe.objects.get(name=self.test_valid_recipe["name"])
         self.assertEqual(response_data["id"], recipe_from_db.id)
+
+    def test_post_valid_recipe_without_relations(self):
+        """
+        POST /recipe/ valid data
+        """
+        token = get_token()
+        response = self.client.post(
+            reverse("recipe"),
+            {
+                field: self.test_valid_recipe[field]
+                for field in constants.REQUIRED_RECIPE_FIELDS
+            },
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Token {token}",
+        )
+        response_data = response.json()
+        recipe_from_db = models.Recipe.objects.get(name=self.test_valid_recipe["name"])
+        self.assertEqual(response_data["id"], recipe_from_db.id)
+
+    def test_post_invalid_recipe(self):
+        """
+        POST /recipe/ invalid data
+        """
+        token = get_token()
+        response = self.client.post(
+            reverse("recipe"),
+            self.test_invalid_recipe,
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Token {token}",
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_post_valid_recipe_invalid_steps(self):
+        """
+        POST /recipe/ invalid data
+        """
+        token = get_token()
+        response = self.client.post(
+            reverse("recipe"),
+            {**self.test_valid_recipe, "steps": self.test_invalid_recipe["steps"],},
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Token {token}",
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_post_valid_recipe_invalid_ingredients(self):
+        """
+        POST /recipe/ invalid data
+        """
+        token = get_token()
+        response = self.client.post(
+            reverse("recipe"),
+            {
+                **self.test_valid_recipe,
+                "ingredients": self.test_invalid_recipe["ingredients"],
+            },
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Token {token}",
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_post_valid_recipe_invalid_tags(self):
+        """
+        POST /recipe/ invalid data
+        """
+        token = get_token()
+        response = self.client.post(
+            reverse("recipe"),
+            {**self.test_valid_recipe, "tags": self.test_invalid_recipe["tags"],},
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Token {token}",
+        )
+        self.assertEqual(response.status_code, 400)
 
     def test_unauthorized_post_recipe(self):
         """
@@ -249,7 +324,7 @@ class RecipeTestCase(TestCase):
         not logged in
         """
         response = self.client.post(
-            reverse("recipe"), self.test_recipe, content_type="application/json",
+            reverse("recipe"), self.test_valid_recipe, content_type="application/json",
         )
         self.assertEqual(response.status_code, 401)
 
@@ -261,14 +336,14 @@ class RecipeTestCase(TestCase):
         token = get_token()
         response_success = self.client.post(  # noqa: F841
             reverse("recipe"),
-            self.test_recipe,
+            self.test_valid_recipe,
             content_type="application/json",
             HTTP_AUTHORIZATION=f"Token {token}",
         )
         self.assertEqual(response_success.status_code, 201)
         response_failure = self.client.post(
             reverse("recipe"),
-            self.test_recipe,
+            self.test_valid_recipe,
             content_type="application/json",
             HTTP_AUTHORIZATION=f"Token {token}",
         )
@@ -616,3 +691,25 @@ class RecipeStepsCase(TestCase):
             HTTP_AUTHORIZATION=f"Token {token}",
         )
         self.assertEqual(response.status_code, 204)
+
+
+class RecipeTagTest(TestCase):
+    """Test for Tags in Recipes
+    """
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            TEST_USER_NAME, email=TEST_EMAIL, password=TEST_PASSWORD
+        )
+        User.objects.create_user(
+            TEST_USER_NAME1, email=TEST_EMAIL1, password=TEST_PASSWORD
+        )
+
+        tag_set = baker.prepare(models.Tag, _quantity=5)
+        self.recipe1 = baker.make(
+            models.Recipe,
+            # make_m2m=True,
+            servings=seq(5),
+            author=self.user,
+            tags=tag_set,
+        )
