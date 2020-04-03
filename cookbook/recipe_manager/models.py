@@ -116,7 +116,7 @@ class Recipe(models.Model):
         settings.AUTH_USER_MODEL, related_name="saved_recipes"
     )
 
-    def to_json(self, with_tags=False, with_steps=False):
+    def to_json(self, with_tags=False):
         """returns json serializable dict representation of recipe
 
         Returns:
@@ -133,10 +133,9 @@ class Recipe(models.Model):
         }
 
         if with_tags:
-            recipe["tags"] = tuple(tag.id for tag in self.tags.only("id").all())
-
-        if with_steps:
-            recipe["steps"] = tuple(step.to_json() for step in self.steps.all())
+            recipe["tags"] = tuple(
+                int(tag_id) for tag_id in self.tags.values_list("id", flat=True).all()
+            )
 
         return recipe
 
@@ -198,15 +197,13 @@ class IngredientInRecipe(models.Model):
         Returns:
             dict: the recipe_ingredient in dictionary form
         """
-        ingredient = {
+        return {
             "amount": str(self.amount),
             "unit": str(self.unit),
             "specifier": str(self.specifier),
             "parent_recipe_id": int(self.parent_recipe_id),
             "ingredient_id": int(self.ingredient_id),
         }
-
-        return ingredient
 
     def __str__(self):
         return f"{self.amount} {self.unit} {self.specifier}"
