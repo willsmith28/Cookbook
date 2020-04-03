@@ -911,6 +911,12 @@ class RecipeTag(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
+        except models.Tag.DoesNotExist:
+            return Response(
+                {"message": "Tag Id provided is invalid"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         except KeyError:
             return Response(
                 {"message": "id or name field is a required"},
