@@ -1,6 +1,6 @@
 """RecipeManager Tests
 """
-# pylint: disable=import-error
+# pylint: disable=import-error,too-many-public-methods
 from django.test import TestCase, Client
 from django.urls import reverse
 from model_bakery import baker, seq
