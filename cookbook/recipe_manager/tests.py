@@ -5,7 +5,7 @@ from django.test import TestCase, Client
 from django.urls import reverse
 from model_bakery import baker, seq
 from users.models import User
-from . import models
+from . import models, constants
 
 TEST_USER_NAME = "testUser"
 TEST_EMAIL = "test@test.net"
@@ -59,7 +59,7 @@ class IngredientTestCase(TestCase):
         POST /ingredient/
         """
         token = get_token()
-        test_ingredient = {"name": "chicken"}
+        test_ingredient = {"name": "chicken", "recipe_id": None}
         response = self.client.post(
             reverse("ingredient"),
             test_ingredient,
@@ -75,7 +75,7 @@ class IngredientTestCase(TestCase):
         POST /ingredient/
         """
         token = get_token()
-        test_ingredient = {"name": "chicken"}
+        test_ingredient = {"name": "chicken", "recipe_id": None}
         response_success = self.client.post(
             reverse("ingredient"),
             test_ingredient,
@@ -183,29 +183,9 @@ class RecipeTestCase(TestCase):
             TEST_USER_NAME1, email=TEST_EMAIL1, password=TEST_PASSWORD
         )
 
-        self.test_recipe = {
-            "name": "some name",
-            "description": "some description",
-            "servings": 4,
-            "cook_time": "1  hour",
-            "ingredients": [
-                {
-                    "name": "chicken",
-                    "amount": 4,
-                    "unit": "n/a",
-                    "specifier": "",
-                    "recipe_id": None,
-                }
-            ],
-            "steps": [
-                {"order": 1, "instruction": "cut chicken"},
-                {"order": 2, "instruction": "cook chicken"},
-            ],
-            "tags": [{"value": "chicken"}],
-        }
-
         steps = [models.Step(order=i + 1, instruction="do thing") for i in range(5)]
         ingredient_set = baker.prepare(models.Ingredient, _quantity=5)
+        tag_set = baker.prepare(models.Tag, _quantity=5)
         self.recipe1 = baker.make(
             models.Recipe,
             # make_m2m=True,
@@ -213,9 +193,34 @@ class RecipeTestCase(TestCase):
             ingredients=ingredient_set,
             servings=seq(5),
             author=self.user,
+            tags=tag_set,
         )
 
-        self.recipes = [self.recipe1]
+        self.ingredient1 = baker.make(models.Ingredient, recipe_id=None)
+
+        self.test_recipe = {
+            "name": "some name",
+            "description": "some description",
+            "servings": 4,
+            "cook_time": "1  hour",
+            "ingredients": [
+                {
+                    "amount": 4,
+                    "unit": "n/a",
+                    "specifier": "",
+                    "ingredient_id": int(ingredient_set[0].id),
+                }
+            ],
+            "steps": [{"instruction": "cut chicken"}, {"instruction": "cook chicken"},],
+            "tags": [int(tag.id) for tag in tag_set],
+        }
+
+        self.test_recipe_ingredient = {
+            "unit": "tsp",
+            "amount": 0.5,
+            "specifier": "",
+            "ingredient_id": int(self.ingredient1.id),
+        }
 
     def test_get_recipe_list(self):
         """
@@ -224,17 +229,7 @@ class RecipeTestCase(TestCase):
         response = self.client.get(reverse("recipe"))
 
         recipes = response.json()
-        self.assertEqual(len(recipes), len(self.recipes))
-
-    def test_ingredients_not_in_recipe_list(self):
-        """
-        GET /recipe/
-        """
-        response = self.client.get(reverse("recipe"))
-
-        recipes = response.json()
-        recipe = recipes[0]
-        self.assertNotIn("ingredients", recipe)
+        self.assertEqual(len(recipes), models.Recipe.objects.count())
 
     def test_post_recipe(self):
         """
@@ -282,22 +277,6 @@ class RecipeTestCase(TestCase):
         )
         self.assertEqual(response_failure.status_code, 400)
 
-    def test_recipe_non_sequential_steps(self):
-        """
-        POST /recipe/
-        invalid steps
-        """
-        token = get_token()
-        test_recipe = self.test_recipe.copy()
-        test_recipe["steps"].append({"order": 10, "instruction": "eat chicken"})
-        response = self.client.post(
-            reverse("recipe"),
-            test_recipe,
-            content_type="application/json",
-            HTTP_AUTHORIZATION=f"Token {token}",
-        )
-        self.assertEqual(response.status_code, 400)
-
     def test_get_recipe_detail(self):
         """
         GET /recipe/<int:pk>/
@@ -308,16 +287,17 @@ class RecipeTestCase(TestCase):
         recipe = response.json()
         self.assertEqual(recipe["id"], self.recipe1.id)
 
-    def test_amount_in_the_recipe_ingredient(self):
+    def test_through_fields_in_ingredient(self):
         """
         GET /recipe/<int:pk>/
         'amount' in recipe.ingredients[0]
         """
         response = self.client.get(
-            reverse("recipe-detail", kwargs={"pk": self.recipe1.id})
+            reverse("recipe-detail", kwargs={"pk": str(self.recipe1.id)})
         )
         recipe = response.json()
-        self.assertIn("amount", recipe["ingredients"][0])
+        for field in constants.REQUIRED_INGREDIENT_IN_RECIPE_FIELDS:
+            self.assertIn(field, recipe["ingredients"][0])
 
     def test_edit_recipe_detail(self):
         """
@@ -359,26 +339,6 @@ class RecipeTestCase(TestCase):
         )
         self.assertEqual(response.status_code, 403)
 
-    def test_edit_recipe_detail_remove_step(self):
-        """
-        PUT /recipe/<int:pk>/
-        invalid
-        """
-        token = get_token()
-        updated_recipe = {
-            **self.recipe1.to_json(),
-            "steps": [step.to_json() for step in list(self.recipe1.steps.all())[:-1]],
-        }
-        self.client.put(
-            reverse("recipe-detail", kwargs={"pk": self.recipe1.id}),
-            updated_recipe,
-            content_type="application/json",
-            HTTP_AUTHORIZATION=f"Token {token}",
-        )
-
-        recipe_from_db = models.Recipe.objects.get(id=self.recipe1.id)
-        self.assertEqual(len(updated_recipe["steps"]), recipe_from_db.steps.count())
-
     def test_recipe_ingredient_get_list(self):
         """
         GET /recipe/<int:pk>/ingredients/
@@ -394,19 +354,13 @@ class RecipeTestCase(TestCase):
         POST /recipe/<int:pk>/ingredients/
         """
         token = get_token()
-        test_recipe_ingredient = {
-            "unit": "tsp",
-            "amount": 0.5,
-            "name": "cumin",
-            "specifier": "",
-            "recipe_id": None,
-        }
         response = self.client.post(
             reverse("recipe-ingredients", kwargs={"recipe_pk": self.recipe1.id}),
-            test_recipe_ingredient,
+            self.test_recipe_ingredient,
             content_type="application/json",
             HTTP_AUTHORIZATION=f"Token {token}",
         )
+
         self.assertEqual(response.status_code, 201)
 
     def test_recipe_ingredient_different_user_post(self):
@@ -414,16 +368,9 @@ class RecipeTestCase(TestCase):
         POST /recipe/<int:pk>/ingredients/
         """
         token = get_token(TEST_USER_NAME1, TEST_PASSWORD)
-        test_recipe_ingredient = {
-            "unit": "tsp",
-            "amount": 0.5,
-            "name": "cumin",
-            "specifier": "",
-            "recipe_id": None,
-        }
         response = self.client.post(
             reverse("recipe-ingredients", kwargs={"recipe_pk": self.recipe1.id}),
-            test_recipe_ingredient,
+            self.test_recipe_ingredient,
             content_type="application/json",
             HTTP_AUTHORIZATION=f"Token {token}",
         )
@@ -433,18 +380,20 @@ class RecipeTestCase(TestCase):
         """
         GET /recipe/<int:recipe_pk>/ingredients/<int:ingredient_pk>/
         """
-        recipe_ingredient_id = self.recipe1.ingredients.first().id
+        ingredient_in_recipe = self.recipe1.ingredients.first()
         response = self.client.get(
             reverse(
                 "recipe-ingredient-detail",
                 kwargs={
                     "recipe_pk": self.recipe1.id,
-                    "ingredient_pk": recipe_ingredient_id,
+                    "ingredient_pk": ingredient_in_recipe.id,
                 },
             )
         )
         response_data = response.json()
-        self.assertEqual(response_data["ingredient_id"], recipe_ingredient_id)
+        self.assertEqual(response_data["ingredient_id"], ingredient_in_recipe.id)
+        for field in constants.REQUIRED_INGREDIENT_IN_RECIPE_FIELDS:
+            self.assertIn(field, response_data)
 
     def test_recipe_ingredient_detail_put(self):
         """
@@ -456,7 +405,8 @@ class RecipeTestCase(TestCase):
         )
         test_recipe_ingredient = {
             **recipe_ingredient.to_json(),
-            "amount": recipe_ingredient.amount + 1,
+            "amount": str(recipe_ingredient.amount + 1),
+            "specifier": "something new",
         }
         response = self.client.put(
             reverse(
@@ -471,7 +421,8 @@ class RecipeTestCase(TestCase):
             HTTP_AUTHORIZATION=f"Token {token}",
         )
         response_data = response.json()
-        self.assertEqual(response_data["amount"], str(recipe_ingredient.amount + 1))
+
+        self.assertEqual(response_data["amount"], str(test_recipe_ingredient["amount"]))
 
     def test_recipe_ingredient_detail_put_different_user(self):
         """
@@ -523,3 +474,100 @@ class RecipeTestCase(TestCase):
         self.assertEqual(
             self.recipe1.ingredients.count(), recipe_ingredient_count_pre_delete - 1
         )
+
+    def test_get_recipe_steps(self):
+        """
+        GET /recipe/<int:recipe_pk>/steps/
+        """
+        token = get_token()
+        response = self.client.get(
+            reverse("recipe-steps", kwargs={"recipe_pk": self.recipe1.id},),
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Token {token}",
+        )
+        response_data = response.json()
+        self.assertEqual(
+            len(response_data),
+            models.IngredientInRecipe.objects.filter(
+                parent_recipe_id=self.recipe1.id
+            ).count(),
+        )
+
+    def test_add_step_to_recipe(self):
+        """
+        POST /recipe/<int:recipe_pk>/steps/
+        """
+        token = get_token()
+        response = self.client.post(
+            reverse("recipe-steps", kwargs={"recipe_pk": self.recipe1.id},),
+            {"instruction": "enjoy"},
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Token {token}",
+        )
+        response_data = response.json()
+        step = self.recipe1.steps.all().last()
+        self.assertEqual(response_data["id"], step.id)
+
+    def test_different_user_add_step_to_recipe(self):
+        """
+        POST /recipe/<int:recipe_pk>/steps/
+        """
+        token = get_token(TEST_USER_NAME1, TEST_PASSWORD)
+        response = self.client.post(
+            reverse("recipe-steps", kwargs={"recipe_pk": self.recipe1.id},),
+            {"instruction": "enjoy"},
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Token {token}",
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_edit_step(self):
+        """
+        PUT /recipe/<int:recipe_pk>/steps/<int:step_pk>/
+        """
+        token = get_token()
+        test_step = {"instruction": "new"}
+        db_step = self.recipe1.steps.all().first()
+        response = self.client.put(
+            reverse(
+                "recipe-step-detail",
+                kwargs={"recipe_pk": self.recipe1.id, "step_pk": db_step.id},
+            ),
+            test_step,
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Token {token}",
+        )
+
+        self.assertEqual(response.json()["instruction"], test_step["instruction"])
+
+    def test_delete_not_last_step(self):
+        """
+        DELETE /recipe/<int:recipe_pk>/steps/<int:step_pk>/
+        """
+        token = get_token()
+        db_step = self.recipe1.steps.all().first()
+        response = self.client.delete(
+            reverse(
+                "recipe-step-detail",
+                kwargs={"recipe_pk": self.recipe1.id, "step_pk": db_step.id},
+            ),
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Token {token}",
+        )
+        self.assertEqual(response.status_code, 409)
+
+    def test_delete_last_step(self):
+        """
+        DELETE /recipe/<int:recipe_pk>/steps/<int:step_pk>/
+        """
+        token = get_token()
+        db_step = self.recipe1.steps.all().last()
+        response = self.client.delete(
+            reverse(
+                "recipe-step-detail",
+                kwargs={"recipe_pk": self.recipe1.id, "step_pk": db_step.id},
+            ),
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Token {token}",
+        )
+        self.assertEqual(response.status_code, 204)
