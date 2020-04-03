@@ -13,7 +13,7 @@ from . import models, utils, constants
 class IngredientView(APIView):
     """
     [GET, POST]: /ingredient/
-    {id: int, name: str}
+    {id: int, name: str, recipe_id: (int, None)}
     """
 
     permission_classes = (IsAuthenticatedOrReadOnly,)
@@ -42,33 +42,34 @@ class IngredientView(APIView):
         Returns:
             Response: DRF Response
         """
-        request_ingredient = request.data
-        try:
-            ingredient, created = models.Ingredient.objects.get_or_create(
-                name=request_ingredient["name"]
-            )
-        except KeyError:
+        ingredient = request.data
+        if errors := utils.validate_required_fields(
+            ingredient, constants.REQUIRED_INGREDIENT_FIELDS
+        ):
             return Response(
-                {"message": "name is a required field"},
-                status=status.HTTP_400_BAD_REQUEST,
+                {"message": " ".join(errors)}, status=status.HTTP_400_BAD_REQUEST,
             )
+
+        ingredient, created = models.Ingredient.objects.get_or_create(
+            name=ingredient["name"], defaults={"recipe_id": ingredient["recipe_id"]}
+        )
 
         return Response(
             ingredient.to_json(),
-            status=(status.HTTP_201_CREATED if created else status.HTTP_409_CONFLICT),
+            status=status.HTTP_201_CREATED if created else status.HTTP_409_CONFLICT,
         )
 
 
 class IngredientDetailView(APIView):
     """
     [GET]: /ingredient/<int:pk>/
-    {id: int, name: str}
+    {id: int, name: str, recipe_id: (int, None)}
     """
 
     permission_classes = (IsAuthenticatedOrReadOnly,)
 
     def get(self, request, pk):
-        """[summary]
+        """Get ingredient
 
         Args:
             request (HttpRequest): Django HttpRequest
@@ -79,13 +80,17 @@ class IngredientDetailView(APIView):
         """
         try:
             ingredient = models.Ingredient.objects.get(id=pk)
+
         except models.Ingredient.DoesNotExist:
-            return Response(
+            response = Response(
                 {"message": "No ingredient found with that ID"},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        return Response(ingredient.to_json(), status=status.HTTP_200_OK,)
+        else:
+            response = Response(ingredient.to_json(), status=status.HTTP_200_OK,)
+
+        return response
 
 
 class TagView(APIView):
@@ -117,16 +122,20 @@ class TagView(APIView):
 
         try:
             tag, created = models.Tag.objects.get_or_create(value=request_tag["value"])
+
         except KeyError:
-            return Response(
+            response = Response(
                 {"message": "value is a required field"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        return Response(
-            tag.to_json(),
-            status=(status.HTTP_201_CREATED if created else status.HTTP_409_CONFLICT),
-        )
+        else:
+            response = Response(
+                tag.to_json(),
+                status=status.HTTP_201_CREATED if created else status.HTTP_409_CONFLICT,
+            )
+
+        return response
 
 
 class TagDetailView(APIView):
@@ -149,13 +158,17 @@ class TagDetailView(APIView):
         """
         try:
             tag = models.Tag.objects.get(id=pk)
+
         except models.Tag.DoesNotExist:
-            return Response(
+            response = Response(
                 {"message": "Tag with that id was not found"},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        return Response(tag.to_json(), status=status.HTTP_200_OK)
+        else:
+            response = Response(tag.to_json(), status=status.HTTP_200_OK)
+
+        return response
 
 
 class RecipeView(APIView):
@@ -166,7 +179,7 @@ class RecipeView(APIView):
         description: str,
         servings: int,
         cook_time: str,
-        tags: [{id: int, value: str}]
+        tags: [int,]
         # POST only
         steps: [
             {
@@ -180,9 +193,8 @@ class RecipeView(APIView):
                 amount: decimal,
                 unit: str,
                 specifier: str,
-                name: str,
-                recipe_id: (int, str, None)
-                parent_recipe_id: (int, str)
+                parent_recipe_id: int
+                ingredient_id: int
             }
         ],
     }
@@ -201,9 +213,10 @@ class RecipeView(APIView):
         """
         recipes = models.Recipe.objects.prefetch_related("tags").all()
 
-        recipes = tuple(recipe.to_json(with_tags=True) for recipe in recipes)
-
-        return Response(recipes, status=status.HTTP_200_OK,)
+        return Response(
+            tuple(recipe.to_json(with_tags=True) for recipe in recipes),
+            status=status.HTTP_200_OK,
+        )
 
     def post(self, request):
         """Create a new Recipe
@@ -214,33 +227,36 @@ class RecipeView(APIView):
         Returns:
             Response: DRF Response
         """
-        request_recipe = request.data
+        # validate request data
+        recipe = request.data
         user = request.user
 
-        errors = (
-            *utils.validate_recipe_ingredients(request_recipe.get("ingredients", ())),
-            *utils.validate_recipe_steps(request_recipe.get("steps", ())),
-            *utils.validate_tags(request_recipe.get("tags", ())),
-        )
-
-        if errors:
+        if errors := utils.validate_recipe(recipe):
             return Response(
-                {"message": " ".join(errors)}, status=status.HTTP_400_BAD_REQUEST
+                {"message": ". ".join(errors)}, status=status.HTTP_400_BAD_REQUEST
             )
 
         try:
             with transaction.atomic():
-                recipe = utils.create_recipe(
-                    request_recipe, user.id, eager_load_relations=True,
-                )
+                recipe = utils.create_recipe(recipe, user.id)
+
+        except models.Ingredient.DoesNotExist:
+            response = Response(
+                {"message": "A provided ingredient ID does not exist"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         except IntegrityError as err:
-            return Response(
+            response = Response(
                 {"message": str(err.__cause__)}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        serialized_recipe = utils.serialize_recipe_with_relationships(recipe)
+        else:
+            response = Response(
+                recipe.to_json(with_tags=True), status=status.HTTP_201_CREATED,
+            )
 
-        return Response(serialized_recipe, status=status.HTTP_201_CREATED)
+        return response
 
 
 class RecipeDetailView(APIView):
@@ -251,6 +267,7 @@ class RecipeDetailView(APIView):
         description: str,
         servings: int,
         cook_time: str,
+        tags: [int,]
         steps: [
             {
                 'order': int,
@@ -258,16 +275,13 @@ class RecipeDetailView(APIView):
                 'recipe_id': (int, str)
             }
         ],
-        # GET only
-        tags: [{id: int, value: str}]
         ingredients: [
             {
                 amount: decimal,
                 unit: str,
                 specifier: str,
-                name: str,
-                recipe_id: (int, str, None)
-                parent_recipe_id: (int, str)
+                parent_recipe_id: int
+                ingredient_id: int
             }
         ],
     }
@@ -287,15 +301,25 @@ class RecipeDetailView(APIView):
         """
         try:
             recipe = models.Recipe.objects.prefetch_related("tags", "steps").get(id=pk)
+
         except models.Recipe.DoesNotExist:
             return Response(
                 {"message": "No Recipe was found with that ID"},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        serialized_recipe = utils.serialize_recipe_with_relationships(recipe)
+        recipe = {
+            **recipe.to_json(with_tags=True),
+            "steps": tuple(step.to_json() for step in recipe.steps.all()),
+            "ingredients": tuple(
+                ingredient.to_json()
+                for ingredient in models.IngredientInRecipe.objects.filter(
+                    parent_recipe_id=pk
+                )
+            ),
+        }
 
-        return Response(serialized_recipe, status=status.HTTP_200_OK)
+        return Response(recipe, status=status.HTTP_200_OK)
 
     def put(self, request, pk):
         """Edit an existing recipe
@@ -309,67 +333,45 @@ class RecipeDetailView(APIView):
         """
         try:
             recipe = models.Recipe.objects.prefetch_related("tags", "steps").get(id=pk)
+
         except models.Recipe.DoesNotExist:
             return Response(
                 {"message": "No Recipe was found with that ID"},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        if not request.user.is_superuser and request.user.id != recipe.author_id:
-            return Response(
-                {"message": "Cannot edit a recipe that is not yours"},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        request_recipe = request.data
-
-        edit = False
-        response = None
-
-        if (new_steps := request_recipe.pop("steps", None)) is not None:
-            if errors := utils.validate_recipe_steps(new_steps):
+        if request.user.id != recipe.author_id:
+            if not request.user.is_superuser:
                 return Response(
-                    {"message": " ".join(errors)}, status=status.HTTP_400_BAD_REQUEST
+                    {"message": "Cannot edit a recipe that is not yours"},
+                    status=status.HTTP_403_FORBIDDEN,
                 )
 
-            try:
-                with transaction.atomic():
-                    utils.update_steps(recipe, new_steps)
-
-                edit = True
-
-            except IntegrityError as err:
-                response = Response(
-                    {"message": str(err.__cause__)}, status=status.HTTP_400_BAD_REQUEST,
-                )
-            except KeyError:
-                response = Response(
-                    {"message": "Missing required field"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-            if response is not None:
-                return response
-
-        recipe_fields = {"name", "description", "servings", "cook_time"}
+        request_recipe = utils.extract_required_fields(
+            request.data, constants.REQUIRED_RECIPE_FIELDS
+        )
+        edit = False
 
         for field, value in request_recipe.items():
-            if field in recipe_fields:
-                if value != getattr(recipe, field):
-                    setattr(recipe, field, value)
-                    edit = True
+            if value is not None and value != getattr(recipe, field):
+                setattr(recipe, field, value)
+                edit = True
 
-        if edit:
-            try:
+        try:
+            if edit:
                 recipe.save()
-            except IntegrityError as err:
-                return Response(
-                    {"message": str(err.__cause__)}, status=status.HTTP_400_BAD_REQUEST
-                )
 
-        serialized_recipe = recipe.to_json(with_tags=True, with_steps=True)
+        except IntegrityError as err:
+            response = Response(
+                {"message": str(err.__cause__)}, status=status.HTTP_400_BAD_REQUEST
+            )
 
-        return Response(serialized_recipe, status=status.HTTP_200_OK)
+        else:
+            response = Response(
+                recipe.to_json(with_tags=True), status=status.HTTP_200_OK,
+            )
+
+        return response
 
 
 class RecipeIngredient(APIView):
@@ -379,9 +381,7 @@ class RecipeIngredient(APIView):
         amount: decimal,
         unit: str,
         specifier: str,
-        name: str,
-        recipe_id: (int, str, None)
-        parent_recipe_id: (int, str)
+        ingredient_id: (int, str)
     }
     """
 
@@ -398,21 +398,24 @@ class RecipeIngredient(APIView):
             Response: DRF Response
         """
         try:
-            recipe = models.Recipe.objects.only("id").get(id=recipe_pk)
+            recipe = models.Recipe.objects.get(id=recipe_pk)
+
         except models.Recipe.DoesNotExist:
-            return Response(
+            response = Response(
                 {"message": "Recipe was not found"}, status=status.HTTP_404_NOT_FOUND
             )
 
-        ingredients = models.IngredientInRecipe.objects.select_related(
-            "ingredient"
-        ).filter(parent_recipe_id=recipe.id)
+        else:
+            ingredients = models.IngredientInRecipe.objects.filter(
+                parent_recipe_id=recipe.id
+            )
 
-        ingredients = tuple(
-            ingredient.to_json(with_ingredient_info=True) for ingredient in ingredients
-        )
+            response = Response(
+                tuple(ingredient.to_json() for ingredient in ingredients),
+                status=status.HTTP_200_OK,
+            )
 
-        return Response(ingredients, status=status.HTTP_200_OK,)
+        return response
 
     def post(self, request, recipe_pk):
         """Add ingredient to recipe
@@ -424,92 +427,119 @@ class RecipeIngredient(APIView):
         Returns:
             Response: DRF Response
         """
+        recipe_ingredient = request.data
+
         try:
-            recipe = models.Recipe.objects.only("id", "author_id").get(id=recipe_pk)
+            recipe = models.Recipe.objects.get(id=recipe_pk)
+            ingredient = models.Ingredient.objects.get(
+                id=recipe_ingredient["ingredient_id"]
+            )
         except models.Recipe.DoesNotExist:
             return Response(
                 {"message": "Recipe was not found"}, status=status.HTTP_404_NOT_FOUND
             )
 
-        if not request.user.is_superuser and request.user.id != recipe.author_id:
+        except models.Ingredient.DoesNotExist:
             return Response(
-                {"message": "Cannot edit a recipe that is not yours"},
-                status=status.HTTP_403_FORBIDDEN,
+                {"message": "Invalid ingredient_id"}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        recipe_ingredient = request.data
+        if request.user.id != recipe.author_id:
+            if not request.user.is_superuser:
+                return Response(
+                    {"message": "Cannot edit a recipe that is not yours"},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
 
-        errors = []
-        for field in constants.REQUIRED_INGREDIENT_IN_RECIPE_FIELDS:
-            if field not in recipe_ingredient:
-                errors.append(f"{field} is a required field")
-
-        if errors:
+        # validate request data
+        if errors := utils.validate_required_fields(
+            recipe_ingredient, constants.REQUIRED_INGREDIENT_IN_RECIPE_FIELDS
+        ):
             return Response(
-                {"message": " ".join(errors)}, status=status.HTTP_400_BAD_REQUEST
+                {"message": ". ".join(errors)}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        ingredient, _ = models.Ingredient.objects.get_or_create(
-            name=recipe_ingredient.pop("name"),
-            recipe_id=recipe_ingredient.pop("recipe_id"),
+        recipe_ingredient = utils.extract_required_fields(
+            recipe_ingredient, constants.REQUIRED_INGREDIENT_IN_RECIPE_FIELDS
         )
 
         try:
             recipe_ingredient = models.IngredientInRecipe.objects.create(
-                parent_recipe_id=recipe.id, ingredient=ingredient, **recipe_ingredient
+                parent_recipe_id=recipe.id, ingredient=ingredient, **recipe_ingredient,
             )
+
         except IntegrityError as err:
-            return Response(
+            response = Response(
                 {"message": str(err.__cause__)}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        return Response(
-            recipe_ingredient.to_json(with_ingredient_info=True),
-            status=status.HTTP_201_CREATED,
-        )
+        else:
+            response = Response(
+                recipe_ingredient.to_json(), status=status.HTTP_201_CREATED,
+            )
+
+        return response
 
 
 class RecipeIngredientDetail(APIView):
     """
     [GET, PUT, DELETE]
-    /recipe/<int:recipe_pk>/ingredients/<int:ingredient_pk>/  # noqa: E501
+    /recipe/<int:recipe_pk>/ingredients/<int:ingredient_pk>/
     {
-        amount: decimal,
+        amount: decimal, str,
         unit: str,
         specifier: str,
-        name: str,
-        recipe_id: (int, str, None)
-        parent_recipe_id: (int, str)
+        ingredient_id: int
+        GET only
+        name: str
+        recipe_id: int
     }
     """
+
+    permission_classes = (IsAuthenticatedOrReadOnly,)
 
     def get(self, request, recipe_pk, ingredient_pk):
         """
         Get Ingredient in recipe detail
+
+        Args:
+            request (HttpRequest): Django HttpRequest
+            recipe_pk (int): Recipe primary key
+            ingredient_pk (int): Ingredient primary key
+
+        Returns:
+            Response: DRF Response
         """
         try:
             recipe_ingredient = models.IngredientInRecipe.objects.select_related(
                 "ingredient"
             ).get(ingredient_id=ingredient_pk, parent_recipe_id=recipe_pk)
+
         except models.IngredientInRecipe.DoesNotExist:
             return Response(
                 {"message": "Ingredient on that recipe was not found"},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        return Response(
-            recipe_ingredient.to_json(with_ingredient_info=True),
-            status=status.HTTP_200_OK,
-        )
+        return Response(recipe_ingredient.to_json(), status=status.HTTP_200_OK,)
 
     def put(self, request, recipe_pk, ingredient_pk):
         """
         Edit Ingredient in recipe
+
+        Args:
+            request (HttpRequest): Django HttpRequest
+            recipe_pk (int): Recipe primary key
+            ingredient_pk (int): Ingredient primary key
+
+        Returns:
+            Response: DRF Response
         """
         try:
             recipe_ingredient = models.IngredientInRecipe.objects.select_related(
                 "ingredient", "parent_recipe"
             ).get(ingredient_id=ingredient_pk, parent_recipe_id=recipe_pk)
+
         except models.IngredientInRecipe.DoesNotExist:
             return Response(
                 {"message": "Ingredient on that recipe was not found"},
@@ -517,50 +547,297 @@ class RecipeIngredientDetail(APIView):
             )
 
         if request.user.id != recipe_ingredient.parent_recipe.author_id:
-            return Response(
-                {"message": "Cannot edit a recipe that is not yours"},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+            if not request.user.is_superuser:
+                return Response(
+                    {"message": "Cannot edit a recipe that is not yours"},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+        request_recipe_ingredient = utils.extract_required_fields(
+            request.data, constants.REQUIRED_INGREDIENT_IN_RECIPE_FIELDS
+        )
 
         edited = False
-
-        request_recipe_ingredient = request.data
-
-        recipe_ingredient_fields = {"amount", "unit", "specifier"}
         for key, value in request_recipe_ingredient.items():
-            if key in recipe_ingredient_fields:
+            if value is not None and value != getattr(recipe_ingredient, key):
                 setattr(recipe_ingredient, key, value)
                 edited = True
 
-        if edited:
-            try:
+        try:
+            if edited:
                 recipe_ingredient.save()
-            except IntegrityError as err:
-                return Response(
-                    {"message": str(err.__cause__)}, status=status.HTTP_409_CONFLICT
-                )
 
-        return Response(
-            recipe_ingredient.to_json(with_ingredient_info=True),
-            status=status.HTTP_200_OK,
-        )
+        except IntegrityError as err:
+            response = Response(
+                {"message": str(err.__cause__)}, status=status.HTTP_409_CONFLICT
+            )
+        else:
+            response = Response(recipe_ingredient.to_json(), status=status.HTTP_200_OK,)
+
+        return response
 
     def delete(self, request, recipe_pk, ingredient_pk):
         """
         Remove Ingredient from recipe
+
+        Args:
+            request (HttpRequest): Django HttpRequest
+            recipe_pk (int): Recipe primary key
+            ingredient_pk (int): Ingredient primary key
+
+        Returns:
+            Response: DRF Response
         """
         try:
+            models.Recipe.objects.values("id").get(id=recipe_pk)
             recipe_ingredient = models.IngredientInRecipe.objects.get(
                 ingredient_id=ingredient_pk, parent_recipe_id=recipe_pk
             )
+        except models.Recipe.DoesNotExist:
+            response = Response(
+                {"message": "Recipe with that id was not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
         except models.IngredientInRecipe.DoesNotExist:
-            return Response(
+            response = Response(
                 {"message": "Ingredient on that recipe was not found"},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        recipe_ingredient.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        else:
+            recipe_ingredient.delete()
+            response = Response(status=status.HTTP_204_NO_CONTENT)
+
+        return response
+
+
+class RecipeStep(APIView):
+    """
+    [GET, POST] /recipe/<int:recipe_pk>/steps/
+    {
+        id: int,
+        order: int,
+        instruction: str,
+        recipe_id: int
+    }
+    Args:
+        APIView ([type]): [description]
+    """
+
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+
+    def get(self, request, recipe_pk):
+        """Get list of steps in the recipe
+
+        Args:
+            request (HttpRequest): Django HttpRequest
+            recipe_pk (int): Recipe primary key
+
+        Returns
+            Response: DRF response
+        """
+        try:
+            recipe = models.Recipe.objects.prefetch_related("steps").get(id=recipe_pk)
+
+        except models.Recipe.DoesNotExist:
+            response = Response(
+                {"message": "Recipe with that id not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        else:
+            response = Response(
+                tuple(step.to_json() for step in recipe.steps.all()),
+                status=status.HTTP_200_OK,
+            )
+
+        return response
+
+    def post(self, request, recipe_pk):
+        """Create new step
+
+        Args:
+            request (HttpRequest): Django HttpRequest
+            recipe_pk (int): Recipe primary key
+
+        Returns
+            Response: DRF response
+        """
+        try:
+            recipe = models.Recipe.objects.get(id=recipe_pk)
+        except models.Recipe.DoesNotExist:
+            return Response(
+                {"message": "Recipe with that id not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if request.user.id != recipe.author_id:
+            if not request.user.is_superuser:
+                return Response(
+                    {"message": "Cannot edit a recipe that is not yours"},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+        step = request.data
+        current_step_count = recipe.steps.count()
+
+        try:
+            step = recipe.steps.create(
+                instruction=step["instruction"], order=current_step_count + 1
+            )
+
+        except KeyError:
+            response = Response(
+                {"message": "instruction is a required field"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        else:
+            response = Response(step.to_json(), status=status.HTTP_201_CREATED)
+
+        return response
+
+
+class RecipeStepDetail(APIView):
+    """
+    [GET, PUT, DELETE] /recipe/<int:recipe_pk>/steps/<int:step_pk>/
+    {
+        id: int,
+        order: int,
+        instruction: str,
+        recipe_id: int
+    }
+    """
+
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+
+    def get(self, request, recipe_pk, step_pk):
+        """get step detail
+
+        Args:
+            request (HttpRequest): Django HttpRequest
+            recipe_pk (int): Recipe primary key
+            step_pk (int): Step primary key
+
+        Returns
+            Response: DRF response
+        """
+        try:
+            models.Recipe.objects.values("id").get(id=recipe_pk)
+            step = models.Step.objects.get(id=step_pk)
+
+        except models.Recipe.DoesNotExist:
+            response = Response(
+                {"message": "Recipe with that id not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        except models.Step.DoesNotExist:
+            response = Response(
+                {"message": "Recipe with that id not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        else:
+            response = Response(step.to_json(), status=status.HTTP_200_OK)
+
+        return response
+
+    def put(self, request, recipe_pk, step_pk):
+        """edit a step
+
+        Args:
+            request (HttpRequest): Django HttpRequest
+            recipe_pk (int): Recipe primary key
+            step_pk (int): Step primary key
+
+        Returns
+            Response: DRF response
+        """
+        try:
+            recipe = models.Recipe.objects.values("author_id").get(id=recipe_pk)
+            step = models.Step.objects.get(id=step_pk)
+
+        except models.Recipe.DoesNotExist:
+            return Response(
+                {"message": "Recipe with that id not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        except models.Step.DoesNotExist:
+            return Response(
+                {"message": "Recipe with that id not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if request.user.id != recipe["author_id"]:
+            if not request.user.is_superuser:
+                return Response(
+                    {"message": "Cannot edit a recipe that is not yours"},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+        try:
+            if (instruction := request.data["instruction"]) != step.instruction:
+                step.instruction = instruction
+                step.save()
+
+        except KeyError:
+            response = Response(
+                {"message": "instruction is a required field."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        else:
+            response = Response(step.to_json(), status=status.HTTP_200_OK)
+
+        return response
+
+    def delete(self, request, recipe_pk, step_pk):
+        """Delete Step
+
+        Args:
+            request (HttpRequest): Django HttpRequest
+            recipe_pk (int): Recipe primary key
+            step_pk (int): Step primary key
+
+        Returns
+            Response: DRF response
+        """
+        try:
+            recipe = models.Recipe.objects.get(id=recipe_pk)
+            step = models.Step.objects.get(id=step_pk)
+
+        except models.Recipe.DoesNotExist:
+            return Response(
+                {"message": "Recipe with that id not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        except models.Step.DoesNotExist:
+            return Response(
+                {"message": "Recipe with that id not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if request.user.id != recipe.author_id:
+            if not request.user.is_superuser:
+                return Response(
+                    {"message": "Cannot edit a recipe that is not yours"},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+        if recipe.steps.count() == step.order:
+            step.delete()
+            response = Response(status=status.HTTP_204_NO_CONTENT)
+
+        else:
+            response = Response(
+                {"message": "Steps must be deleted in decresing order"},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        return response
 
 
 class RecipeTag(APIView):
@@ -571,6 +848,8 @@ class RecipeTag(APIView):
         value: str
     }
     """
+
+    permission_classes = (IsAuthenticatedOrReadOnly,)
 
     def get(self, request, recipe_pk):
         """Get all tags on this recipe
@@ -607,25 +886,30 @@ class RecipeTag(APIView):
         """
         try:
             recipe = models.Recipe.objects.prefetch_related("tags").get(id=recipe_pk)
+
+            if "value" in request.data:
+                tag, _ = models.Tag.objects.get_or_create(value=request.data["value"])
+            else:
+                tag = models.Tag.objects.get(id=request.data["id"])
+
         except models.Recipe.DoesNotExist:
             return Response(
                 {"message": "Recipe with that id was not found"},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        if not request.user.is_superuser and request.user.id != recipe.author_id:
-            return Response(
-                {"message": "Cannot edit a recipe that is not yours"},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        try:
-            tag = models.Tag.objects.get_or_create(value=request.data["value"])
         except KeyError:
             return Response(
-                {"message": '"value" is a required field'},
+                {"message": "id or name field is a required"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        if request.user.id != recipe.author_id:
+            if not request.user.is_superuser:
+                return Response(
+                    {"message": "Cannot edit a recipe that is not yours"},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
 
         recipe.tags.add(tag)
 
@@ -634,8 +918,10 @@ class RecipeTag(APIView):
 
 class RecipeTagDelete(APIView):
     """
-    [DELETE] /recipe/<int:recipe_pk>/tags/<tag_pk>
+    [DELETE] /recipe/<int:recipe_pk>/tags/<tag_pk>/
     """
+
+    permission_classes = (IsAuthenticatedOrReadOnly,)
 
     def delete(self, request, recipe_pk, tag_pk):
         """Remove a tag from a recipe
@@ -650,19 +936,24 @@ class RecipeTagDelete(APIView):
         """
         try:
             recipe = models.Recipe.objects.prefetch_related("tags").get(id=recipe_pk)
+            tag = models.Tag.objects.get(id=tag_pk)
         except models.Recipe.DoesNotExist:
             return Response(
                 {"message": "Recipe with that id was not found"},
                 status=status.HTTP_404_NOT_FOUND,
             )
-
-        try:
-            tag = models.Tag.objects.get(id=tag_pk)
         except models.Tag.DoesNotExist:
             return Response(
                 {"message": "Tag with that id was not found"},
                 status=status.HTTP_404_NOT_FOUND,
             )
+
+        if request.user.id != recipe.author_id:
+            if not request.user.is_superuser:
+                return Response(
+                    {"message": "Cannot edit a recipe that is not yours"},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
 
         recipe.tags.remove(tag)
 
