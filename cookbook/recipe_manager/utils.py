@@ -133,7 +133,7 @@ def validate_recipe_ingredients(ingredients: Iterable[dict]) -> Tuple[str]:
     return tuple(errors)
 
 
-def validate_tags(tags: Iterable[Union[str, int]]) -> List[str]:
+def validate_tags(tags: Iterable[Union[str, int]]) -> Tuple[str]:
     """validates provided tag IDs
     returns list of errors or empty list if no errors.
     ingredients should be as exampled below
@@ -142,15 +142,15 @@ def validate_tags(tags: Iterable[Union[str, int]]) -> List[str]:
         tags (Iterable[Union[str, int]]): list of IDs
 
     Returns:
-        List[str]: list of errors
+        Tuple[str]: list of errors
     """
-    errors = []
+    errors = ()
     try:
         if any(not isinstance(tag_id, (str, int)) for tag_id in tags):
-            errors.append("tag ID must be either a string or an integer")
+            errors = ("tag ID must be either a string or an integer",)
 
     except TypeError:
-        errors.append("tags must be a list of tag IDs")
+        errors = ("tags must be a list of tag IDs",)
 
     return errors
 
