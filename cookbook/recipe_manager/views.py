@@ -149,7 +149,7 @@ class TagDetailView(APIView):
     permission_classes = (IsAuthenticatedOrReadOnly,)
 
     def get(self, request, pk):
-        """[summary]
+        """Get tag detail
 
         Args:
             request (HttpRequest): Django HttpRequest
@@ -230,7 +230,6 @@ class RecipeView(APIView):
         Returns:
             Response: DRF Response
         """
-        # validate request data
         recipe = request.data
         user = request.user
 
@@ -459,7 +458,6 @@ class RecipeIngredient(APIView):
                     status=status.HTTP_403_FORBIDDEN,
                 )
 
-        # validate request data
         if errors := utils.validate_required_fields(
             recipe_ingredient, constants.REQUIRED_INGREDIENT_IN_RECIPE_FIELDS
         ):
@@ -744,7 +742,7 @@ class RecipeStepDetail(APIView):
 
         except models.Step.DoesNotExist:
             response = Response(
-                {"message": "Recipe with that id not found"},
+                {"message": "Step with that id not found"},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
