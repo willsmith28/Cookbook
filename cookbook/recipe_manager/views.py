@@ -306,23 +306,27 @@ class RecipeDetailView(APIView):
             recipe = models.Recipe.objects.prefetch_related("tags", "steps").get(id=pk)
 
         except models.Recipe.DoesNotExist:
-            return Response(
+            response = Response(
                 {"message": "No Recipe was found with that ID"},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        recipe = {
-            **recipe.to_json(with_tags=True),
-            "steps": tuple(step.to_json() for step in recipe.steps.all()),
-            "ingredients": tuple(
-                ingredient.to_json()
-                for ingredient in models.IngredientInRecipe.objects.filter(
-                    parent_recipe_id=pk
-                )
-            ),
-        }
+        else:
+            response = Response(
+                {
+                    **recipe.to_json(with_tags=True),
+                    "steps": tuple(step.to_json() for step in recipe.steps.all()),
+                    "ingredients": tuple(
+                        ingredient.to_json()
+                        for ingredient in models.IngredientInRecipe.objects.filter(
+                            parent_recipe_id=pk
+                        )
+                    ),
+                },
+                status=status.HTTP_200_OK,
+            )
 
-        return Response(recipe, status=status.HTTP_200_OK)
+        return response
 
     def put(self, request, pk):
         """Edit an existing recipe
@@ -515,17 +519,19 @@ class RecipeIngredientDetail(APIView):
             Response: DRF Response
         """
         try:
-            recipe_ingredient = models.IngredientInRecipe.objects.select_related(
-                "ingredient"
-            ).get(ingredient_id=ingredient_pk, parent_recipe_id=recipe_pk)
+            recipe_ingredient = models.IngredientInRecipe.objects.get(
+                ingredient_id=ingredient_pk, parent_recipe_id=recipe_pk
+            )
 
         except models.IngredientInRecipe.DoesNotExist:
-            return Response(
+            response = Response(
                 {"message": "Ingredient on that recipe was not found"},
                 status=status.HTTP_404_NOT_FOUND,
             )
+        else:
+            response = Response(recipe_ingredient.to_json(), status=status.HTTP_200_OK,)
 
-        return Response(recipe_ingredient.to_json(), status=status.HTTP_200_OK,)
+        return response
 
     def put(self, request, recipe_pk, ingredient_pk):
         """
@@ -868,15 +874,20 @@ class RecipeTag(APIView):
 
         try:
             recipe = models.Recipe.objects.prefetch_related("tags").get(id=recipe_pk)
+
         except models.Recipe.DoesNotExist:
-            return Response(
+            response = Response(
                 {"message": "Recipe with that id not found"},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        tags = tuple(tag.to_json() for tag in recipe.tags.all())
+        else:
+            response = Response(
+                tuple(tag.to_json() for tag in recipe.tags.all()),
+                status=status.HTTP_200_OK,
+            )
 
-        return Response(tags, status=status.HTTP_200_OK)
+        return response
 
     def post(self, request, recipe_pk):
         """Add new tag to this recipe
