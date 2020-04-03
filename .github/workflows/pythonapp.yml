@@ -21,8 +21,7 @@ jobs:
           pip install -r requirements/dev.txt
       - name: Lint with pylint
         run: |
-          # stop the build if there are pylint errors
-          pylint --rcfile=.pylintrc --exit-zero cookbook/
+          pylint --rcfile=.pylintrc --exit-zero cookbook/recipe_manager
       - name: Django tests
         run: |
           python cookbook/manage.py test recipe_manager.tests
