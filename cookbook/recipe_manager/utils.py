@@ -27,7 +27,8 @@ def extract_required_fields(item: dict, required_fields: Iterable[str]) -> dict:
         required_fields (Iterable[str]): list of fields to be in new dictionary
 
     Returns:
-        dict: dictionary containing the fields
+        dict: dictionary containing the fields in required_fields.
+        The fields is None if it was missing from item
     """
     return {field: item.get(field) for field in required_fields}
 
@@ -46,7 +47,6 @@ def validate_recipe(recipe: dict) -> Tuple[str]:
             ingredient_id: (int, str)
         }, ...]
         steps: [{
-            'order': int,
             'instruction': str,
         }, ...]
         tags: [int, ...]
