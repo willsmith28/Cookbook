@@ -3,3 +3,4 @@ pylint==2.4.4
 black==19.10b0
 pylint-django==2.0.14
 model_bakery==1.1.0
+coverage==5.0.4
