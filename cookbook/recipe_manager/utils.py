@@ -4,6 +4,20 @@ from typing import Iterable, Union, Tuple
 from . import models, constants
 
 
+def user_owns_item(author_id: int, user_id: int, is_superuser: bool) -> bool:
+    """checks if user owns thing they are trying to edit
+
+    Args:
+        author_id (int): author ID of item
+        user_id (int): [description]
+        is_superuser (bool): [description]
+
+    Returns:
+        bool: [description]
+    """
+    return user_id == author_id or is_superuser
+
+
 def validate_required_fields(item: dict, required_fields: Iterable[str]) -> Tuple[str]:
     """Validate that all required fields are in the provided item
 

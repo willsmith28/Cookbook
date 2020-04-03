@@ -1,5 +1,7 @@
 """constants for RecipeManger
 """
+from rest_framework import response, status
+
 REQUIRED_INGREDIENT_FIELDS = ("name", "recipe_id")
 
 REQUIRED_RECIPE_FIELDS = (
@@ -14,4 +16,9 @@ REQUIRED_INGREDIENT_IN_RECIPE_FIELDS = (
     "unit",
     "specifier",
     "ingredient_id",
+)
+
+NOT_ALLOWED_RESPONSE = response.Response(
+    {"message": "Cannot edit a recipe that is not yours"},
+    status=status.HTTP_403_FORBIDDEN,
 )

@@ -182,12 +182,10 @@ class RecipeDetailView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        if request.user.id != recipe.author_id:
-            if not request.user.is_superuser:
-                return Response(
-                    {"message": "Cannot edit a recipe that is not yours"},
-                    status=status.HTTP_403_FORBIDDEN,
-                )
+        if not utils.user_owns_item(
+            recipe.author_id, request.user.id, request.user.is_superuser
+        ):
+            return constants.NOT_ALLOWED_RESPONSE
 
         request_recipe = utils.extract_required_fields(
             request.data, constants.REQUIRED_RECIPE_FIELDS

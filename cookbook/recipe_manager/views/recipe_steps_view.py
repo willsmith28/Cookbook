@@ -1,4 +1,3 @@
-
 """
 Views for /recipe/<recipe_pk>/steps/ and /recipe/<recipe_pk>/steps/<step_pk>
 """
@@ -7,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework import status
-from .. import models
+from .. import models, utils, constants
 
 
 class RecipeStep(APIView):
@@ -19,6 +18,7 @@ class RecipeStep(APIView):
         instruction: str,
         recipe_id: int
     }
+    only instruction is required to post
     Args:
         APIView ([type]): [description]
     """
@@ -69,12 +69,10 @@ class RecipeStep(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        if request.user.id != recipe.author_id:
-            if not request.user.is_superuser:
-                return Response(
-                    {"message": "Cannot edit a recipe that is not yours"},
-                    status=status.HTTP_403_FORBIDDEN,
-                )
+        if not utils.user_owns_item(
+            recipe.author_id, request.user.id, request.user.is_superuser
+        ):
+            return constants.NOT_ALLOWED_RESPONSE
 
         step = request.data
         current_step_count = recipe.steps.count()
@@ -173,12 +171,10 @@ class RecipeStepDetail(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        if request.user.id != recipe["author_id"]:
-            if not request.user.is_superuser:
-                return Response(
-                    {"message": "Cannot edit a recipe that is not yours"},
-                    status=status.HTTP_403_FORBIDDEN,
-                )
+        if not utils.user_owns_item(
+            recipe["author_id"], request.user.id, request.user.is_superuser
+        ):
+            return constants.NOT_ALLOWED_RESPONSE
 
         try:
             if (instruction := request.data["instruction"]) != step.instruction:
@@ -228,12 +224,10 @@ class RecipeStepDetail(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        if request.user.id != recipe.author_id:
-            if not request.user.is_superuser:
-                return Response(
-                    {"message": "Cannot edit a recipe that is not yours"},
-                    status=status.HTTP_403_FORBIDDEN,
-                )
+        if not utils.user_owns_item(
+            recipe.author_id, request.user.id, request.user.is_superuser
+        ):
+            return constants.NOT_ALLOWED_RESPONSE
 
         if recipe.steps.count() == step.order:
             step.delete()

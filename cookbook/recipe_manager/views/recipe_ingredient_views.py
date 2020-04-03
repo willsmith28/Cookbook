@@ -80,12 +80,10 @@ class RecipeIngredient(APIView):
                 {"message": "Invalid ingredient_id"}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        if request.user.id != recipe.author_id:
-            if not request.user.is_superuser:
-                return Response(
-                    {"message": "Cannot edit a recipe that is not yours"},
-                    status=status.HTTP_403_FORBIDDEN,
-                )
+        if not utils.user_owns_item(
+            recipe.author_id, request.user.id, request.user.is_superuser
+        ):
+            return constants.NOT_ALLOWED_RESPONSE
 
         if errors := utils.validate_required_fields(
             recipe_ingredient, constants.REQUIRED_INGREDIENT_IN_RECIPE_FIELDS

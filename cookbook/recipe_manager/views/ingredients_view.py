@@ -7,7 +7,7 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework import status
 from .. import models, utils, constants
 
-
+# pylint: disable=no-self-use
 class IngredientView(APIView):
     """
     [GET, POST]: /ingredient/

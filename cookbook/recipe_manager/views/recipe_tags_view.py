@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework import status
-from .. import models
+from .. import models, utils, constants
 
 
 class RecipeTag(APIView):
@@ -83,12 +83,10 @@ class RecipeTag(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if request.user.id != recipe.author_id:
-            if not request.user.is_superuser:
-                return Response(
-                    {"message": "Cannot edit a recipe that is not yours"},
-                    status=status.HTTP_403_FORBIDDEN,
-                )
+        if not utils.user_owns_item(
+            recipe.author_id, request.user.id, request.user.is_superuser
+        ):
+            return constants.NOT_ALLOWED_RESPONSE
 
         recipe.tags.add(tag)
 
@@ -127,12 +125,10 @@ class RecipeTagDelete(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        if request.user.id != recipe.author_id:
-            if not request.user.is_superuser:
-                return Response(
-                    {"message": "Cannot edit a recipe that is not yours"},
-                    status=status.HTTP_403_FORBIDDEN,
-                )
+        if not utils.user_owns_item(
+            recipe.author_id, request.user.id, request.user.is_superuser
+        ):
+            return constants.NOT_ALLOWED_RESPONSE
 
         recipe.tags.remove(tag)
 
