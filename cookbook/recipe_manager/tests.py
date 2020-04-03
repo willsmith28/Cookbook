@@ -655,6 +655,7 @@ class RecipeStepsCase(TestCase):
         response_data = response.json()
         step = self.recipe1.steps.all().last()
         self.assertEqual(response_data["id"], step.id)
+        self.assertEqual(response_data["order"], 6)
 
     def test_different_user_add_step_to_recipe(self):
         """
