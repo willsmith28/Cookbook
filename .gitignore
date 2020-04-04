@@ -2,6 +2,7 @@ env
 .vscode
 *.pyc
 db.sqlite3
+cookbook/.coverage
 
 client/.DS_Store
 client/node_modules
