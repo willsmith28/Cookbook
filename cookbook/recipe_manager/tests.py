@@ -359,18 +359,6 @@ class RecipeTestCase(TestCase):
         recipe = response.json()
         self.assertEqual(recipe["id"], self.recipe1.id)
 
-    def test_through_fields_in_ingredient(self):
-        """
-        GET /recipe/<int:pk>/
-        'amount' in recipe.ingredients[0]
-        """
-        response = self.client.get(
-            reverse("recipe-detail", kwargs={"pk": str(self.recipe1.id)})
-        )
-        recipe = response.json()
-        for field in constants.REQUIRED_INGREDIENT_IN_RECIPE_FIELDS:
-            self.assertIn(field, recipe["ingredients"][0])
-
     def test_edit_recipe_detail(self):
         """
         PUT /recipe/<int:pk>/
