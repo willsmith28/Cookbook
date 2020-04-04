@@ -769,7 +769,7 @@ class RecipeTagTest(TestCase):
             content_type="application/json",
             HTTP_AUTHORIZATION=f"Token {token}",
         )
-        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.status_code, 400)
 
     def test_add_tag_doesnt_exit_to_recipe(self):
         """
