@@ -91,7 +91,10 @@ class RecipeView(APIView):
 
         else:
             response = Response(
-                recipe.to_json(with_tag_ids=True), status=status.HTTP_201_CREATED,
+                recipe.to_json(
+                    with_tag_ids=True, with_ingredient_ids=True, with_step_ids=True
+                ),
+                status=status.HTTP_201_CREATED,
             )
 
         return response
