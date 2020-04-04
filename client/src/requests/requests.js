@@ -4,7 +4,7 @@ const requests = {
   login(username, password) {
     return client.post("/api-token-auth/", {
       username,
-      password
+      password,
     });
   },
 
@@ -48,47 +48,72 @@ const requests = {
     return client.put(`/recipe-manager/recipe/${id}/`, recipe);
   },
 
-  getAllIngredientsInRecipe(recipeID) {
-    return client.get(`/recipe-manager/recipe/${recipeID}/ingredients/`);
+  getAllIngredientsInRecipe(recipe_id) {
+    return client.get(`/recipe-manager/recipe/${recipe_id}/ingredients/`);
   },
 
-  AddIngredientToRecipe(recipeID, ingredient) {
+  AddIngredientToRecipe(recipe_id, ingredientInRecipe) {
     return client.post(
-      `/recipe-manager/recipe/${recipeID}/ingredients/`,
-      ingredient
+      `/recipe-manager/recipe/${recipe_id}/ingredients/`,
+      ingredientInRecipe
     );
   },
 
-  getIngredientInRecipe(recipeID, ingredientID) {
+  getIngredientInRecipe(recipe_id, ingredient_id) {
     return client.get(
-      `/recipe-manager/recipe/${recipeID}/ingredients/${ingredientID}/`
+      `/recipe-manager/recipe/${recipe_id}/ingredients/${ingredient_id}/`
     );
   },
 
-  editIngredientInRecipe(recipeID, ingredientID, ingredient) {
+  editIngredientInRecipe(recipe_id, ingredient_id, ingredientInRecipe) {
     return client.put(
-      `/recipe-manager/recipe/${recipeID}/ingredients/${ingredientID}/`,
-      ingredient
+      `/recipe-manager/recipe/${recipe_id}/ingredients/${ingredient_id}/`,
+      ingredientInRecipe
     );
   },
 
-  removeIngredientFromRecipe(recipeID, ingredientID) {
+  removeIngredientFromRecipe(recipe_id, ingredient_id) {
     return client.delete(
-      `/recipe-manager/recipe/${recipeID}/ingredients/${ingredientID}/`
+      `/recipe-manager/recipe/${recipe_id}/ingredients/${ingredient_id}/`
     );
   },
 
-  getAllTagsInRecipe(recipeID) {
-    return client.get(`/recipe-manager/recipe/${recipeID}/tags/`);
+  getAllStepsInRecipe(recipe_id) {
+    return client.get(`/recipe-manager/recipe/${recipe_id}/steps/`);
   },
 
-  addTagToRecipe(recipeID, tag) {
-    return client.post(`/recipe-manager/recipe/${recipeID}/tags/`, tag);
+  addStepToRecipe(recipe_id, step) {
+    return client.post(`/recipe-manager/recipe/${recipe_id}/steps/`, step);
   },
 
-  removeTagFromRecipe(recipeID, tagId) {
-    return client.delete(`/recipe-manager/recipe/${recipeID}/tags/${tagId}/`);
-  }
+  getStepInRecipe(recipe_id, step_id) {
+    return client.get(`/recipe-manager/recipe/${recipe_id}/steps/${step_id}/`);
+  },
+
+  editStepInRecipe(recipe_id, step_id, step) {
+    return client.put(
+      `/recipe-manager/recipe/${recipe_id}/steps/${step_id}/`,
+      step
+    );
+  },
+
+  removeStepFromRecipe(recipe_id, step_id) {
+    return client.delete(
+      `/recipe-manager/recipe/${recipe_id}/steps/${step_id}/`
+    );
+  },
+
+  getAllTagsInRecipe(recipe_id) {
+    return client.get(`/recipe-manager/recipe/${recipe_id}/tags/`);
+  },
+
+  addTagToRecipe(recipe_id, tag) {
+    return client.post(`/recipe-manager/recipe/${recipe_id}/tags/`, tag);
+  },
+
+  removeTagFromRecipe(recipe_id, tag_id) {
+    return client.delete(`/recipe-manager/recipe/${recipe_id}/tags/${tag_id}/`);
+  },
 };
 
 export default requests;
