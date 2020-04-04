@@ -16,70 +16,207 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='Ingredient',
+            name="Ingredient",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=256, unique=True)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=256, unique=True)),
             ],
         ),
         migrations.CreateModel(
-            name='IngredientInRecipe',
+            name="IngredientInRecipe",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('amount', models.DecimalField(decimal_places=2, max_digits=5)),
-                ('unit', models.CharField(choices=[('Volume', (('tsp', 'teaspoon'), ('tbsp', 'tablespoon'), ('fl oz', 'fluid ounce'), ('c', 'cup'), ('pt', 'pint'), ('qt', 'quart'), ('gal', 'gallon'), ('ml', 'milliliter'), ('l', 'liter'))), ('Mass', (('lb', 'pound'), ('oz', 'ounce'), ('g', 'gram'))), ('Length', (('in', 'inch'), ('mm', 'millimeter'), ('cm', 'centimeter'))), ('Other', (('pieces', ''), ('n/a', '')))], max_length=16)),
-                ('specifier', models.CharField(blank=True, max_length=256)),
-                ('ingredient', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='recipe_manager.Ingredient')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("amount", models.DecimalField(decimal_places=2, max_digits=5)),
+                (
+                    "unit",
+                    models.CharField(
+                        choices=[
+                            (
+                                "Volume",
+                                (
+                                    ("tsp", "teaspoon"),
+                                    ("tbsp", "tablespoon"),
+                                    ("fl oz", "fluid ounce"),
+                                    ("c", "cup"),
+                                    ("pt", "pint"),
+                                    ("qt", "quart"),
+                                    ("gal", "gallon"),
+                                    ("ml", "milliliter"),
+                                    ("l", "liter"),
+                                ),
+                            ),
+                            ("Mass", (("lb", "pound"), ("oz", "ounce"), ("g", "gram"))),
+                            (
+                                "Length",
+                                (
+                                    ("in", "inch"),
+                                    ("mm", "millimeter"),
+                                    ("cm", "centimeter"),
+                                ),
+                            ),
+                            ("Other", (("pieces", ""), ("n/a", ""))),
+                        ],
+                        max_length=16,
+                    ),
+                ),
+                ("specifier", models.CharField(blank=True, max_length=256)),
+                (
+                    "ingredient",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        to="recipe_manager.Ingredient",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='Tag',
+            name="Tag",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('value', models.CharField(max_length=256, unique=True)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("value", models.CharField(max_length=256, unique=True)),
             ],
         ),
         migrations.CreateModel(
-            name='Recipe',
+            name="Recipe",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=256, unique=True)),
-                ('description', models.TextField()),
-                ('servings', models.IntegerField(validators=[django.core.validators.MinValueValidator(1, message='servings must be greater than zero')])),
-                ('cook_time', models.CharField(max_length=128)),
-                ('created_on', models.DateTimeField(auto_now_add=True)),
-                ('last_updated_on', models.DateTimeField(auto_now=True)),
-                ('author', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='created_recipes', to=settings.AUTH_USER_MODEL)),
-                ('ingredients', models.ManyToManyField(related_name='used_in_recipes', through='recipe_manager.IngredientInRecipe', to='recipe_manager.Ingredient')),
-                ('tags', models.ManyToManyField(related_name='recipes', to='recipe_manager.Tag')),
-                ('users_that_favorited', models.ManyToManyField(related_name='saved_recipes', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=256, unique=True)),
+                ("description", models.TextField()),
+                (
+                    "servings",
+                    models.IntegerField(
+                        validators=[
+                            django.core.validators.MinValueValidator(
+                                1, message="servings must be greater than zero"
+                            )
+                        ]
+                    ),
+                ),
+                ("cook_time", models.CharField(max_length=128)),
+                ("created_on", models.DateTimeField(auto_now_add=True)),
+                ("last_updated_on", models.DateTimeField(auto_now=True)),
+                (
+                    "author",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="created_recipes",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "ingredients",
+                    models.ManyToManyField(
+                        related_name="used_in_recipes",
+                        through="recipe_manager.IngredientInRecipe",
+                        to="recipe_manager.Ingredient",
+                    ),
+                ),
+                (
+                    "tags",
+                    models.ManyToManyField(
+                        related_name="recipes", to="recipe_manager.Tag"
+                    ),
+                ),
+                (
+                    "users_that_favorited",
+                    models.ManyToManyField(
+                        related_name="saved_recipes", to=settings.AUTH_USER_MODEL
+                    ),
+                ),
             ],
         ),
         migrations.AddField(
-            model_name='ingredientinrecipe',
-            name='parent_recipe',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='recipe_ingredients', to='recipe_manager.Recipe'),
+            model_name="ingredientinrecipe",
+            name="recipe",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="recipe_ingredients",
+                to="recipe_manager.Recipe",
+            ),
         ),
         migrations.AddField(
-            model_name='ingredient',
-            name='recipe',
-            field=models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='used_as_ingredient', to='recipe_manager.Recipe'),
+            model_name="ingredient",
+            name="recipe",
+            field=models.OneToOneField(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="used_as_ingredient",
+                to="recipe_manager.Recipe",
+            ),
         ),
         migrations.CreateModel(
-            name='Step',
+            name="Step",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('order', models.IntegerField(validators=[django.core.validators.MinValueValidator(1, message='Step order must be start at 1')])),
-                ('instruction', models.TextField()),
-                ('recipe', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='steps', to='recipe_manager.Recipe')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "order",
+                    models.IntegerField(
+                        validators=[
+                            django.core.validators.MinValueValidator(
+                                1, message="Step order must be start at 1"
+                            )
+                        ]
+                    ),
+                ),
+                ("instruction", models.TextField()),
+                (
+                    "recipe",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="steps",
+                        to="recipe_manager.Recipe",
+                    ),
+                ),
             ],
             options={
-                'ordering': ('order',),
-                'unique_together': {('order', 'recipe_id')},
+                "ordering": ("order",),
+                "unique_together": {("order", "recipe_id")},
             },
         ),
         migrations.AlterUniqueTogether(
-            name='ingredientinrecipe',
-            unique_together={('parent_recipe_id', 'ingredient_id')},
+            name="ingredientinrecipe", unique_together={("recipe_id", "ingredient_id")},
         ),
     ]

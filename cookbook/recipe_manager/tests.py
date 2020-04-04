@@ -520,7 +520,7 @@ class RecipeIngredientCase(TestCase):
         """
         token = get_token()
         recipe_ingredient = models.IngredientInRecipe.objects.get(
-            parent_recipe_id=self.recipe1, ingredient=self.recipe1.ingredients.first(),
+            recipe=self.recipe1, ingredient=self.recipe1.ingredients.first(),
         )
         test_recipe_ingredient = {
             **recipe_ingredient.to_json(),
@@ -549,7 +549,7 @@ class RecipeIngredientCase(TestCase):
         """
         token = get_token(TEST_USER_NAME1, TEST_PASSWORD)
         recipe_ingredient = models.IngredientInRecipe.objects.get(
-            parent_recipe_id=self.recipe1, ingredient=self.recipe1.ingredients.first()
+            recipe=self.recipe1, ingredient=self.recipe1.ingredients.first()
         )
         test_recipe_ingredient = {
             **recipe_ingredient.to_json(),
@@ -575,7 +575,7 @@ class RecipeIngredientCase(TestCase):
         """
         token = get_token()
         recipe_ingredient = models.IngredientInRecipe.objects.get(
-            parent_recipe_id=self.recipe1, ingredient=self.recipe1.ingredients.first()
+            recipe=self.recipe1, ingredient=self.recipe1.ingredients.first()
         )
         recipe_ingredient_count_pre_delete = self.recipe1.ingredients.count()
         response = self.client.delete(

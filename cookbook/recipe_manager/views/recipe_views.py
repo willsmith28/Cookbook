@@ -31,7 +31,7 @@ class RecipeView(APIView):
                 amount: decimal,
                 unit: str,
                 specifier: str,
-                parent_recipe_id: int
+                recipe_id: int
                 ingredient_id: int
             }
         ],
@@ -121,7 +121,7 @@ class RecipeDetailView(APIView):
                 amount: decimal,
                 unit: str,
                 specifier: str,
-                parent_recipe_id: int
+                recipe_id: int
                 ingredient_id: int
             }
         ],

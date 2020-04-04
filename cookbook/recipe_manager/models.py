@@ -101,7 +101,7 @@ class Recipe(models.Model):
     ingredients = models.ManyToManyField(
         Ingredient,
         through="IngredientInRecipe",
-        through_fields=("parent_recipe", "ingredient"),
+        through_fields=("recipe", "ingredient"),
         related_name="used_in_recipes",
     )
     tags = models.ManyToManyField(Tag, related_name="recipes",)
@@ -170,7 +170,7 @@ class IngredientInRecipe(models.Model):
     """Through model for Recipe and Ingredient that contains amounts
 
     Attributes:
-        parent_recipe (Recipe): recipe this ingredient is for
+        recipe (Recipe): recipe this ingredient is for
         ingredient (Ingredient): ingredient in recipe
         amount (decimal): numeric value of amount to put in recipe
         unit (str): unit of amount
@@ -201,7 +201,7 @@ class IngredientInRecipe(models.Model):
     unit = models.CharField(max_length=16, choices=UNITS)
     specifier = models.CharField(max_length=256, blank=True)
 
-    parent_recipe = models.ForeignKey(
+    recipe = models.ForeignKey(
         Recipe, on_delete=models.CASCADE, related_name="recipe_ingredients"
     )
     ingredient = models.ForeignKey(Ingredient, on_delete=models.PROTECT)
@@ -209,7 +209,7 @@ class IngredientInRecipe(models.Model):
     class Meta:
         """Enforce no duplicate ingredients in recipe"""
 
-        unique_together = ("parent_recipe_id", "ingredient_id")
+        unique_together = ("recipe_id", "ingredient_id")
 
     def to_json(self):
         """returns json serializable dict representation of recipe_ingredient
@@ -221,7 +221,7 @@ class IngredientInRecipe(models.Model):
             "amount": str(self.amount),
             "unit": str(self.unit),
             "specifier": str(self.specifier),
-            "parent_recipe_id": int(self.parent_recipe_id),
+            "recipe_id": int(self.recipe_id),
             "ingredient_id": int(self.ingredient_id),
         }
 
@@ -231,7 +231,7 @@ class IngredientInRecipe(models.Model):
     def __repr__(self):
         return (
             f"<IngredientInRecipe: {self.id} "
-            f"ingredient_id: {self.ingredient_id} parent_recipe_id: {self.parent_recipe} "
+            f"ingredient_id: {self.ingredient_id} recipe_id: {self.recipe} "
             f"amount: {self.amount} unit: {self.unit}>"
         )
 

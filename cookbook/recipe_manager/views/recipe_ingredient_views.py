@@ -45,7 +45,7 @@ class RecipeIngredient(APIView):
                 tuple(
                     ingredient.to_json()
                     for ingredient in models.IngredientInRecipe.objects.filter(
-                        parent_recipe_id=recipe.id
+                        recipe_id=recipe.id
                     )
                 ),
                 status=status.HTTP_200_OK,
@@ -98,7 +98,7 @@ class RecipeIngredient(APIView):
 
         try:
             recipe_ingredient = models.IngredientInRecipe.objects.create(
-                parent_recipe_id=recipe.id, ingredient=ingredient, **recipe_ingredient,
+                recipe_id=recipe.id, ingredient=ingredient, **recipe_ingredient,
             )
 
         except IntegrityError as err:
@@ -145,7 +145,7 @@ class RecipeIngredientDetail(APIView):
         """
         try:
             recipe_ingredient = models.IngredientInRecipe.objects.get(
-                ingredient_id=ingredient_pk, parent_recipe_id=recipe_pk
+                ingredient_id=ingredient_pk, recipe_id=recipe_pk
             )
 
         except models.IngredientInRecipe.DoesNotExist:
@@ -172,8 +172,8 @@ class RecipeIngredientDetail(APIView):
         """
         try:
             recipe_ingredient = models.IngredientInRecipe.objects.select_related(
-                "ingredient", "parent_recipe"
-            ).get(ingredient_id=ingredient_pk, parent_recipe_id=recipe_pk)
+                "ingredient", "recipe"
+            ).get(ingredient_id=ingredient_pk, recipe_id=recipe_pk)
 
         except models.IngredientInRecipe.DoesNotExist:
             return Response(
@@ -181,7 +181,7 @@ class RecipeIngredientDetail(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        if request.user.id != recipe_ingredient.parent_recipe.author_id:
+        if request.user.id != recipe_ingredient.recipe.author_id:
             if not request.user.is_superuser:
                 return Response(
                     {"message": "Cannot edit a recipe that is not yours"},
@@ -226,7 +226,7 @@ class RecipeIngredientDetail(APIView):
         try:
             models.Recipe.objects.values("id").get(id=recipe_pk)
             recipe_ingredient = models.IngredientInRecipe.objects.get(
-                ingredient_id=ingredient_pk, parent_recipe_id=recipe_pk
+                ingredient_id=ingredient_pk, recipe_id=recipe_pk
             )
         except models.Recipe.DoesNotExist:
             response = Response(
