@@ -59,11 +59,7 @@ class RecipeTag(APIView):
         """
         try:
             recipe = models.Recipe.objects.prefetch_related("tags").get(id=recipe_pk)
-
-            if "value" in request.data:
-                tag, _ = models.Tag.objects.get_or_create(value=request.data["value"])
-            else:
-                tag = models.Tag.objects.get(id=request.data["id"])
+            tag = models.Tag.objects.get(id=request.data["id"])
 
         except models.Recipe.DoesNotExist:
             return Response(
@@ -79,8 +75,7 @@ class RecipeTag(APIView):
 
         except KeyError:
             return Response(
-                {"message": "id or name field is a required"},
-                status=status.HTTP_400_BAD_REQUEST,
+                {"message": "id field is required"}, status=status.HTTP_400_BAD_REQUEST,
             )
 
         if not utils.user_owns_item(
