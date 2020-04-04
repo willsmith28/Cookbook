@@ -138,7 +138,9 @@ class RecipeDetailView(APIView):
             Response: DRF Response
         """
         try:
-            recipe = models.Recipe.objects.prefetch_related("tags", "steps").get(id=pk)
+            recipe = models.Recipe.objects.prefetch_related(
+                "tags", "steps", "ingredients"
+            ).get(id=pk)
 
         except models.Recipe.DoesNotExist:
             response = Response(
@@ -148,16 +150,9 @@ class RecipeDetailView(APIView):
 
         else:
             response = Response(
-                {
-                    **recipe.to_json(with_tag_ids=True),
-                    "steps": tuple(step.to_json() for step in recipe.steps.all()),
-                    "ingredients": tuple(
-                        ingredient.to_json()
-                        for ingredient in models.IngredientInRecipe.objects.filter(
-                            parent_recipe_id=pk
-                        )
-                    ),
-                },
+                recipe.to_json(
+                    with_tag_ids=True, with_ingredient_ids=True, with_step_ids=True
+                ),
                 status=status.HTTP_200_OK,
             )
 
@@ -174,7 +169,9 @@ class RecipeDetailView(APIView):
             Response: DRF Response
         """
         try:
-            recipe = models.Recipe.objects.prefetch_related("tags", "steps").get(id=pk)
+            recipe = models.Recipe.objects.prefetch_related(
+                "tags", "steps", "ingredients"
+            ).get(id=pk)
 
         except models.Recipe.DoesNotExist:
             return Response(
@@ -208,7 +205,10 @@ class RecipeDetailView(APIView):
 
         else:
             response = Response(
-                recipe.to_json(with_tag_ids=True), status=status.HTTP_200_OK,
+                recipe.to_json(
+                    with_tag_ids=True, with_ingredient_ids=True, with_step_ids=True
+                ),
+                status=status.HTTP_200_OK,
             )
 
         return response
