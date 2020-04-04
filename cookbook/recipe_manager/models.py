@@ -116,8 +116,16 @@ class Recipe(models.Model):
         settings.AUTH_USER_MODEL, related_name="saved_recipes"
     )
 
-    def to_json(self, with_tags=False):
-        """returns json serializable dict representation of recipe
+    def to_json(
+        self, with_tag_ids=False, with_ingredient_ids=False, with_step_ids=False
+    ):
+        """
+        returns json serializable dict representation of recipe
+
+        Args:
+            with_tag_ids (bool, optional): include list of tag IDs. Defaults to False.
+            with_ingredient_ids (bool, optional): include list of ingredient IDs. Defaults to False.
+            with_step_ids (bool, optional): include list of step IDs. Defaults to False.
 
         Returns:
             dict: the recipe in dictionary form
@@ -132,9 +140,21 @@ class Recipe(models.Model):
             "last_updated_on": self.last_updated_on.strftime("%Y-%m-%dT%H-%M-%S"),
         }
 
-        if with_tags:
+        if with_tag_ids:
             recipe["tags"] = tuple(
                 int(tag_id) for tag_id in self.tags.values_list("id", flat=True).all()
+            )
+
+        if with_ingredient_ids:
+            recipe["ingredients"] = tuple(
+                int(ingredient_id)
+                for ingredient_id in self.ingredients.values_list("id", flat=True).all()
+            )
+
+        if with_step_ids:
+            recipe["steps"] = tuple(
+                int(step_id)
+                for step_id in self.steps.values_list("id", flat=True).all()
             )
 
         return recipe
