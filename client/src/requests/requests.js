@@ -44,8 +44,8 @@ const requests = {
     return client.get(`/recipe-manager/recipe/${id}/`);
   },
 
-  editRecipe(id, recipe) {
-    return client.put(`/recipe-manager/recipe/${id}/`, recipe);
+  editRecipe(recipe) {
+    return client.put(`/recipe-manager/recipe/${recipe.id}/`, recipe);
   },
 
   getAllIngredientsInRecipe(recipe_id) {
@@ -65,9 +65,9 @@ const requests = {
     );
   },
 
-  editIngredientInRecipe(recipe_id, ingredient_id, ingredientInRecipe) {
+  editIngredientInRecipe(ingredientInRecipe) {
     return client.put(
-      `/recipe-manager/recipe/${recipe_id}/ingredients/${ingredient_id}/`,
+      `/recipe-manager/recipe/${ingredientInRecipe.recipe_id}/ingredients/${ingredientInRecipe.ingredient_id}/`,
       ingredientInRecipe
     );
   },
@@ -90,9 +90,9 @@ const requests = {
     return client.get(`/recipe-manager/recipe/${recipe_id}/steps/${step_id}/`);
   },
 
-  editStepInRecipe(recipe_id, step_id, step) {
+  editStepInRecipe(recipe_id, step) {
     return client.put(
-      `/recipe-manager/recipe/${recipe_id}/steps/${step_id}/`,
+      `/recipe-manager/recipe/${recipe_id}/steps/${step.id}/`,
       step
     );
   },
