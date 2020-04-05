@@ -5,7 +5,7 @@ from django.contrib.auth import models as auth_models
 from django.utils import timezone
 
 
-class User(auth_models.AbstractBaseUser):
+class User(auth_models.AbstractBaseUser, auth_models.PermissionsMixin):
     """User for this site
 
     Args:
