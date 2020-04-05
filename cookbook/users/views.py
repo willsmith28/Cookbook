@@ -16,5 +16,9 @@ class UserView(APIView):
         """
         Get Logged in user data
         """
-        user = request.user
-        return Response(user.to_json(), status=status.HTTP_200_OK)
+        try:
+            return Response(request.user.to_json(), status=status.HTTP_200_OK)
+        except AttributeError:
+            return Response(
+                {"message": "User not logged in"}, status=status.HTTP_401_UNAUTHORIZED
+            )
