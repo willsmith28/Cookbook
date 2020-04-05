@@ -367,46 +367,45 @@ const actions = {
 };
 
 const getters = {
-  isIngredientCached: (state) => (name) => {
-    const { ingredients } = state;
-    return Object.prototype.hasOwnProperty.call(ingredients, name);
+  getIngredient: (state) => (id) => {
+    const {
+      ingredients: { [id]: ingredient },
+    } = state;
+    return ingredient;
   },
 
-  getIngredientByName: (state) => (name) => {
-    const { ingredients } = state;
-    return ingredients[`${name}`];
-  },
-
-  ingredientCacheCount(state) {
+  ingredientCount(state) {
     return Object.keys(state.ingredients).length;
   },
 
-  isTagCached: (state) => (value) => {
-    const { tags } = state;
-    return Object.prototype.hasOwnProperty.call(tags, value);
+  getTag: (state) => (id) => {
+    const {
+      tags: { [id]: tag },
+    } = state;
+    return tag;
   },
 
-  getTagByValue: (state) => (value) => {
-    const { tags } = state;
-    return tags[`${value}`];
-  },
-
-  tagCacheCount(state) {
+  tagCount(state) {
     return Object.keys(state.tags).length;
   },
 
-  getRecipeByID: (state) => (id) => {
-    const { recipes } = state;
-    return recipes[`${id}`];
+  getRecipe: (state) => (id) => {
+    const {
+      recipes: { [id]: recipe },
+    } = state;
+    return recipe;
   },
 
-  isRecipeCached: (state) => (id) => {
-    const { recipes } = state;
-    return Object.prototype.hasOwnProperty.call(recipes, id);
-  },
-
-  recipeCacheCount(state) {
+  recipeCount(state) {
     return Object.keys(state.recipes).length;
+  },
+
+  getIngredientInRecipe: (state) => ({ ingredient_id, recipe_id }) => {
+    const key = `${ingredient_id} ${recipe_id}`;
+    const {
+      ingredientsInRecipe: { [key]: ingredientInRecipe },
+    } = state;
+    return ingredientInRecipe;
   },
 };
 
