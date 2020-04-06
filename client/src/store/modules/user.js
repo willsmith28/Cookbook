@@ -1,4 +1,4 @@
-import requests from "../../requests/requests";
+import requests from "../../requests";
 
 const state = {
   userName: null

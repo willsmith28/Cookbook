@@ -1,5 +1,5 @@
 import Vue from "vue";
-import requests from "../../requests/requests";
+import requests from "../../requests";
 
 const state = {
   recipes: {},

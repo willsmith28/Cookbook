@@ -8,6 +8,10 @@ const requests = {
     });
   },
 
+  getUserInfo() {
+    return client.get("/user/me/");
+  },
+
   getAllIngredients() {
     return client.get("/recipe-manager/ingredient/");
   },
