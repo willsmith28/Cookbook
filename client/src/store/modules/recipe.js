@@ -288,7 +288,7 @@ const actions = {
       } = await requests.editIngredientInRecipe(ingredientInRecipe);
       commit("ADD_INGREDIENT_IN_RECIPE", changedIngredientInRecipe);
     } catch (error) {
-      // TODO hanle 400
+      // TODO handle 400
       handleError(error);
     }
   },
@@ -400,12 +400,19 @@ const getters = {
     return Object.keys(state.recipes).length;
   },
 
-  getIngredientInRecipe: (state) => ({ ingredient_id, recipe_id }) => {
+  getIngredientInRecipe: (state) => (ingredient_id, recipe_id) => {
     const key = `${ingredient_id} ${recipe_id}`;
     const {
       ingredientsInRecipe: { [key]: ingredientInRecipe },
     } = state;
     return ingredientInRecipe;
+  },
+
+  getStep: (state) => (step_id) => {
+    const {
+      steps: { [`${step_id}`]: step },
+    } = state;
+    return step;
   },
 };
 
