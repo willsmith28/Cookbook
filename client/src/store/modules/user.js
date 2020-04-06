@@ -1,7 +1,7 @@
 import requests from "../../requests";
 
 const state = {
-  userName: null
+  userName: null,
 };
 
 const mutations = {
@@ -10,27 +10,32 @@ const mutations = {
   },
   LOGOUT(state) {
     state.userName = null;
-  }
+  },
 };
 
 const actions = {
   async login({ commit }, { username, password }) {
     try {
-      const response = await requests.login(username, password);
-      const { data: token } = response;
+      const {
+        data: { token },
+      } = await requests.login(username, password);
 
       localStorage.setItem("token", token);
       commit("SET_USER_NAME", username);
     } catch (error) {
       localStorage.removeItem("token");
-      handleError(error);
+      return Promise.reject(error);
     }
+  },
+
+  setUsername({ commit }, username) {
+    commit("SET_USER_NAME", username);
   },
 
   logout({ commit }) {
     localStorage.removeItem("token");
     commit("LOGOUT");
-  }
+  },
 };
 
 const getters = {
@@ -39,7 +44,7 @@ const getters = {
   },
   userName(state) {
     return state.userName;
-  }
+  },
 };
 
 export default {
@@ -47,20 +52,5 @@ export default {
   state,
   mutations,
   actions,
-  getters
+  getters,
 };
-
-function handleError(error) {
-  if (error.response) {
-    // eslint-disable-next-line no-console
-    console.log(error.response.data);
-  } else if (error.request) {
-    // eslint-disable-next-line no-console
-    console.log(error.request);
-  } else {
-    // eslint-disable-next-line no-console
-    console.log("Error", error.message);
-  }
-  // eslint-disable-next-line no-console
-  console.log(error.config);
-}
