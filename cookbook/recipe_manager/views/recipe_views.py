@@ -51,8 +51,12 @@ class RecipeView(APIView):
         """
         return Response(
             tuple(
-                recipe.to_json(with_tag_ids=True)
-                for recipe in models.Recipe.objects.prefetch_related("tags").all()
+                recipe.to_json(
+                    with_tag_ids=True, with_ingredient_ids=True, with_step_ids=True
+                )
+                for recipe in models.Recipe.objects.prefetch_related(
+                    "ingredients", "steps", "tags"
+                ).all()
             ),
             status=status.HTTP_200_OK,
         )
@@ -154,7 +158,7 @@ class RecipeDetailView(APIView):
         else:
             response = Response(
                 recipe.to_json(
-                    with_tag_ids=True, with_ingredient_ids=True, with_step_ids=True
+                    with_ingredient_ids=True, with_step_ids=True, with_tag_ids=True,
                 ),
                 status=status.HTTP_200_OK,
             )
@@ -209,7 +213,7 @@ class RecipeDetailView(APIView):
         else:
             response = Response(
                 recipe.to_json(
-                    with_tag_ids=True, with_ingredient_ids=True, with_step_ids=True
+                    with_ingredient_ids=True, with_step_ids=True, with_tag_ids=True
                 ),
                 status=status.HTTP_200_OK,
             )
