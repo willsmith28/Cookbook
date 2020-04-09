@@ -117,15 +117,15 @@ class Recipe(models.Model):
     )
 
     def to_json(
-        self, with_tag_ids=False, with_ingredient_ids=False, with_step_ids=False
+        self, with_ingredient_ids=False, with_step_ids=False, with_tag_ids=False
     ):
         """
         returns json serializable dict representation of recipe
 
         Args:
-            with_tag_ids (bool, optional): include list of tag IDs. Defaults to False.
             with_ingredient_ids (bool, optional): include list of ingredient IDs. Defaults to False.
             with_step_ids (bool, optional): include list of step IDs. Defaults to False.
+            with_tag_ids (bool, optional): include list of tag IDs. Defaults to False.
 
         Returns:
             dict: the recipe in dictionary form
