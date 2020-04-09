@@ -17,13 +17,16 @@ class RecipeView(APIView):
         description: str,
         servings: int,
         cook_time: str,
-        tags: [int,]
+        tags: [int,],
+        # GET
+        steps: [int,],
+        ingredients: [int,]
         # POST only
         steps: [
             {
                 'order': int,
                 'instruction': str,
-                'recipe_id': (int, str)
+                'recipe_id': int # does not need to be provided
             }
         ],
         ingredients: [
@@ -31,7 +34,7 @@ class RecipeView(APIView):
                 amount: decimal,
                 unit: str,
                 specifier: str,
-                recipe_id: int
+                recipe_id: int # does not need to be provided
                 ingredient_id: int
             }
         ],
@@ -112,23 +115,10 @@ class RecipeDetailView(APIView):
         description: str,
         servings: int,
         cook_time: str,
+        # GET ONLY
+        ingredients: [int,],
+        steps: [int,],
         tags: [int,]
-        steps: [
-            {
-                'order': int,
-                'instruction': str,
-                'recipe_id': (int, str)
-            }
-        ],
-        ingredients: [
-            {
-                amount: decimal,
-                unit: str,
-                specifier: str,
-                recipe_id: int
-                ingredient_id: int
-            }
-        ],
     }
     """
 
