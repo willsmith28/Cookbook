@@ -101,6 +101,8 @@ DATABASES = {
     }
 }
 
+FIXTURE_DIRS = ("cookbook/recipe_manager/fixtures/simple_recipes.json",)
+
 
 # Default Auth model
 AUTH_USER_MODEL = "users.User"

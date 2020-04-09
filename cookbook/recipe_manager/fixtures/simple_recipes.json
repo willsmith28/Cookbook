@@ -1,0 +1,164 @@
+[
+  {
+    "model": "recipe_manager.ingredient",
+    "pk": 1,
+    "fields": {
+      "recipe_id": null,
+      "name": "Cumin"
+    }
+  },
+  {
+    "model": "recipe_manager.ingredient",
+    "pk": 2,
+    "fields": {
+      "recipe_id": null,
+      "name": "Paprika"
+    }
+  },
+  {
+    "model": "recipe_manager.ingredient",
+    "pk": 3,
+    "fields": {
+      "recipe_id": null,
+      "name": "Ancho Chili Powder"
+    }
+  },
+  {
+    "model": "recipe_manager.ingredient",
+    "pk": 4,
+    "fields": {
+      "recipe_id": null,
+      "name": "Garlic Powder"
+    }
+  },
+  {
+    "model": "recipe_manager.ingredient",
+    "pk": 5,
+    "fields": {
+      "recipe_id": null,
+      "name": "Oregano"
+    }
+  },
+  {
+    "model": "recipe_manager.ingredient",
+    "pk": 6,
+    "fields": {
+      "recipe_id": null,
+      "name": "Onion Powder"
+    }
+  },
+  {
+    "model": "recipe_manager.ingredient",
+    "pk": 7,
+    "fields": {
+      "recipe_id": null,
+      "name": "Cayenne Powder"
+    }
+  },
+  {
+    "model": "recipe_manager.recipe",
+    "pk": 1,
+    "fields": {
+      "name": "Crock-Pot Chili Powder",
+      "description": "Chili powder to be used in Crock-Pot Chili",
+      "servings": 1,
+      "cook_time": "5 minutes",
+      "created_on": "2013-03-16T17:41:28+00:00",
+      "last_updated_on": "2013-03-16T17:41:28+00:00"
+    }
+  },
+  {
+    "model": "recipe_manager.ingredientinrecipe",
+    "pk": 1,
+    "fields": {
+      "recipe_id": 1,
+      "ingredient": 1,
+      "amount": 1,
+      "unit": "tblsp",
+      "specifier": ""
+    }
+  },
+  {
+    "model": "recipe_manager.ingredientinrecipe",
+    "pk": 2,
+    "fields": {
+      "recipe_id": 1,
+      "ingredient": 2,
+      "amount": 2,
+      "unit": "tblsp",
+      "specifier": ""
+    }
+  },
+  {
+    "model": "recipe_manager.ingredientinrecipe",
+    "pk": 3,
+    "fields": {
+      "recipe_id": 1,
+      "ingredient": 3,
+      "amount": 1,
+      "unit": "tblsp",
+      "specifier": ""
+    }
+  },
+  {
+    "model": "recipe_manager.ingredientinrecipe",
+    "pk": 4,
+    "fields": {
+      "recipe_id": 1,
+      "ingredient": 4,
+      "amount": 1.5,
+      "unit": "tsp",
+      "specifier": ""
+    }
+  },
+  {
+    "model": "recipe_manager.ingredientinrecipe",
+    "pk": 5,
+    "fields": {
+      "recipe_id": 1,
+      "ingredient": 5,
+      "amount": 2,
+      "unit": "tsp",
+      "specifier": "Dried"
+    }
+  },
+  {
+    "model": "recipe_manager.ingredientinrecipe",
+    "pk": 6,
+    "fields": {
+      "recipe_id": 1,
+      "ingredient": 6,
+      "amount": 0.75,
+      "unit": "tsp",
+      "specifier": ""
+    }
+  },
+  {
+    "model": "recipe_manager.ingredientinrecipe",
+    "pk": 7,
+    "fields": {
+      "recipe_id": 1,
+      "ingredient": 7,
+      "amount": 0.5,
+      "unit": "tsp",
+      "specifier": ""
+    }
+  },
+  {
+    "model": "recipe_manager.step",
+    "pk": 1,
+    "fields": {
+      "recipe_id": 1,
+      "order": 0.5,
+      "instruction": "mix spices"
+    }
+  },
+  {
+    "model": "recipe_manager.ingredient",
+    "pk": 7,
+    "fields": {
+      "recipe_id": 1,
+      "name": "Crock-Pot Chili Powder"
+    }
+  }
+]
