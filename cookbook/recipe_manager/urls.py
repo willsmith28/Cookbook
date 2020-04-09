@@ -5,6 +5,7 @@ from . import views
 
 urlpatterns = [
     path("ingredient/", views.IngredientView.as_view(), name="ingredient"),
+    path("ingredient/units/", views.ingredient_units, name="ingredient"),
     path(
         "ingredient/<int:pk>/",
         views.IngredientDetailView.as_view(),

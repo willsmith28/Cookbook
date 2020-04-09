@@ -4,6 +4,7 @@ Views for /ingredient/ and /ingredient/<pk>/
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.decorators import api_view
 from rest_framework import status
 from .. import models, utils, constants
 
@@ -90,3 +91,16 @@ class IngredientDetailView(APIView):
             response = Response(ingredient.to_json(), status=status.HTTP_200_OK,)
 
         return response
+
+
+@api_view(["GET"])
+def ingredient_units(request):
+    """returns choices for ingredient units
+
+    Args:
+        request (HttpRequest): Django HttpRequest
+
+    Returns:
+        Response: DRF Response
+    """
+    return Response(models.IngredientInRecipe.UNITS, status=status.HTTP_200_OK)
