@@ -4,7 +4,7 @@ const requests = {
   login(username, password) {
     return client.post("/api-token-auth/", {
       username,
-      password,
+      password
     });
   },
 
@@ -121,7 +121,7 @@ const requests = {
 
   removeTagFromRecipe(recipe_id, tag_id) {
     return client.delete(`/recipe-manager/recipe/${recipe_id}/tags/${tag_id}/`);
-  },
+  }
 };
 
 export default requests;

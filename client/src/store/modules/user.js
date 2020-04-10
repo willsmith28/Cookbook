@@ -1,7 +1,7 @@
 import requests from "../../requests";
 
 const state = {
-  userName: null,
+  userName: null
 };
 
 const mutations = {
@@ -10,14 +10,14 @@ const mutations = {
   },
   LOGOUT(state) {
     state.userName = null;
-  },
+  }
 };
 
 const actions = {
   async login({ commit }, { username, password }) {
     try {
       const {
-        data: { token },
+        data: { token }
       } = await requests.login(username, password);
 
       localStorage.setItem("token", token);
@@ -35,7 +35,7 @@ const actions = {
   logout({ commit }) {
     localStorage.removeItem("token");
     commit("LOGOUT");
-  },
+  }
 };
 
 const getters = {
@@ -44,7 +44,7 @@ const getters = {
   },
   userName(state) {
     return state.userName;
-  },
+  }
 };
 
 export default {
@@ -52,5 +52,5 @@ export default {
   state,
   mutations,
   actions,
-  getters,
+  getters
 };

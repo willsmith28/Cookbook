@@ -5,13 +5,13 @@ const client = axios.create({
   "Access-Control-Allow-Origin": "*",
   headers: {
     post: { "Content-Type": "application/json" },
-    put: { "Content-Type": "application/json" },
-  },
+    put: { "Content-Type": "application/json" }
+  }
 });
 
 const getAuthToken = () => localStorage.getItem("token");
 
-const authInterceptor = (config) => {
+const authInterceptor = config => {
   const token = getAuthToken();
 
   config.headers["Authorization"] = token ? `Token ${token}` : "";
@@ -19,7 +19,7 @@ const authInterceptor = (config) => {
   return config;
 };
 
-const errorInterceptor = (error) => {
+const errorInterceptor = error => {
   switch (error.response.status) {
     case 400:
       console.log(error.response.data);
@@ -46,7 +46,7 @@ const errorInterceptor = (error) => {
   return Promise.reject(error);
 };
 
-const responseInterceptor = (response) => {
+const responseInterceptor = response => {
   return response;
 };
 

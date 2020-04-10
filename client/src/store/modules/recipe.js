@@ -6,7 +6,7 @@ const state = {
   steps: {},
   ingredientsInRecipe: {},
   ingredients: {},
-  tags: {},
+  tags: {}
 };
 
 // const state = {
@@ -90,7 +90,7 @@ const mutations = {
   ADD_INGREDIENT_TO_RECIPE(state, ingredientInRecipe) {
     // POST /recipe/pk/ingredients/
     const {
-      recipes: { [ingredientInRecipe.recipe_id]: recipe },
+      recipes: { [ingredientInRecipe.recipe_id]: recipe }
     } = state;
 
     recipe.ingredients.push(ingredientInRecipe.ingredient_id);
@@ -98,7 +98,7 @@ const mutations = {
   REMOVE_INGREDIENT_FROM_RECIPE(state, { ingredient_id, recipe_id }) {
     // DELETE /recipe/pk/ingredients/pk/
     const {
-      recipes: { [recipe_id]: recipe },
+      recipes: { [recipe_id]: recipe }
     } = state;
 
     recipe.ingredients.splice(recipe.ingredients.indexOf(ingredient_id), 1);
@@ -110,7 +110,7 @@ const mutations = {
   ADD_TAG_TO_RECIPE(state, { tag_id, recipe_id }) {
     // POST /recipe/pk/tags/pk/
     const {
-      recipes: { [recipe_id]: recipe },
+      recipes: { [recipe_id]: recipe }
     } = state;
 
     recipe.tags.push(tag_id);
@@ -118,7 +118,7 @@ const mutations = {
   REMOVE_TAG_FROM_RECIPE(state, { tag_id, recipe_id }) {
     // DELETE /recipe/pk/tags/pk/
     const {
-      recipes: { [recipe_id]: recipe },
+      recipes: { [recipe_id]: recipe }
     } = state;
 
     recipe.tags.splice(recipe.tags.indexOf(tag_id), 1);
@@ -136,7 +136,7 @@ const mutations = {
   ADD_STEP_TO_RECIPE(state, { step_id, recipe_id }) {
     // POST /recipe/pk/steps/
     const {
-      recipes: { [recipe_id]: recipe },
+      recipes: { [recipe_id]: recipe }
     } = state;
 
     recipe.steps.push(step_id);
@@ -144,7 +144,7 @@ const mutations = {
   REMOVE_STEP_FROM_RECIPE(state, { step_id, recipe_id }) {
     // DELETE /recipe/pk/steps/id/
     const {
-      recipes: { [recipe_id]: recipe },
+      recipes: { [recipe_id]: recipe }
     } = state;
 
     recipe.steps.splice(recipe.steps.indexOf(step_id));
@@ -152,7 +152,7 @@ const mutations = {
   REMOVE_STEP(state, step_id) {
     // DELETE /recipe/pk/steps/id/
     Vue.delete(state.steps, `${step_id}`);
-  },
+  }
 };
 
 const actions = {
@@ -216,7 +216,7 @@ const actions = {
           dispatchMethods.push("fetchIngredientsInRecipe");
         }
         await Promise.all(
-          dispatchMethods.map((method) => dispatch(method, createdRecipe.id))
+          dispatchMethods.map(method => dispatch(method, createdRecipe.id))
         );
       }
       commit("ADD_RECIPE", createdRecipe);
@@ -238,7 +238,7 @@ const actions = {
           dispatchMethods.push("fetchIngredientsInRecipe");
         }
         await Promise.all(
-          dispatchMethods.map((method) => dispatch(method, recipe_id))
+          dispatchMethods.map(method => dispatch(method, recipe_id))
         );
       }
       commit("ADD_RECIPE", recipe);
@@ -260,7 +260,7 @@ const actions = {
     // GET /recipe/pk/ingredients/
     try {
       const {
-        data: ingredientInRecipeList,
+        data: ingredientInRecipeList
       } = await requests.getAllIngredientsInRecipe(recipe_id);
       commit("ADD_INGREDIENTS_IN_RECIPE_FROM_LIST", ingredientInRecipeList);
     } catch (error) {
@@ -284,7 +284,7 @@ const actions = {
     // PUT /recipe/pk/ingredients/pk/
     try {
       const {
-        data: changedIngredientInRecipe,
+        data: changedIngredientInRecipe
       } = await requests.editIngredientInRecipe(ingredientInRecipe);
       commit("ADD_INGREDIENT_IN_RECIPE", changedIngredientInRecipe);
     } catch (error) {
@@ -363,13 +363,13 @@ const actions = {
     } catch (error) {
       handleError(error);
     }
-  },
+  }
 };
 
 const getters = {
-  getIngredient: (state) => (id) => {
+  getIngredient: state => id => {
     const {
-      ingredients: { [id]: ingredient },
+      ingredients: { [id]: ingredient }
     } = state;
     return ingredient;
   },
@@ -378,9 +378,9 @@ const getters = {
     return Object.keys(state.ingredients).length;
   },
 
-  getTag: (state) => (id) => {
+  getTag: state => id => {
     const {
-      tags: { [id]: tag },
+      tags: { [id]: tag }
     } = state;
     return tag;
   },
@@ -389,9 +389,9 @@ const getters = {
     return Object.keys(state.tags).length;
   },
 
-  getRecipe: (state) => (id) => {
+  getRecipe: state => id => {
     const {
-      recipes: { [id]: recipe },
+      recipes: { [id]: recipe }
     } = state;
     return recipe;
   },
@@ -400,20 +400,20 @@ const getters = {
     return Object.keys(state.recipes).length;
   },
 
-  getIngredientInRecipe: (state) => (ingredient_id, recipe_id) => {
+  getIngredientInRecipe: state => (ingredient_id, recipe_id) => {
     const key = `${ingredient_id} ${recipe_id}`;
     const {
-      ingredientsInRecipe: { [key]: ingredientInRecipe },
+      ingredientsInRecipe: { [key]: ingredientInRecipe }
     } = state;
     return ingredientInRecipe;
   },
 
-  getStep: (state) => (step_id) => {
+  getStep: state => step_id => {
     const {
-      steps: { [`${step_id}`]: step },
+      steps: { [`${step_id}`]: step }
     } = state;
     return step;
-  },
+  }
 };
 
 export default {
@@ -421,7 +421,7 @@ export default {
   state,
   getters,
   actions,
-  mutations,
+  mutations
 };
 
 function handleError(error) {
