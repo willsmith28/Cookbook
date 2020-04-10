@@ -1,34 +1,32 @@
 <template>
-  <v-app>
-    <v-app-bar app color="primary" dark>
-      <v-app-bar-nav-icon></v-app-bar-nav-icon>
-
-      <v-toolbar-title>Cookbook</v-toolbar-title>
-
-      <v-spacer></v-spacer>
-
-      <v-btn v-if="!loggedIn" :to="{name: 'login'}">Login</v-btn>
-    </v-app-bar>
-
-    <v-content>
-      <router-view></router-view>
-    </v-content>
-  </v-app>
+  <div id="app">
+    <div id="nav">
+      <router-link to="/">Home</router-link> |
+      <router-link to="/about">About</router-link>
+    </div>
+    <router-view/>
+  </div>
 </template>
 
-<script>
-export default {
-  name: "App",
+<style>
+#app {
+  font-family: Avenir, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-align: center;
+  color: #2c3e50;
+}
 
-  data: () => ({
-    //
-  }),
-  computed: {
-    loggedIn() {
-      return this.$store.getters["user/loggedIn"];
-    }
-  },
+#nav {
+  padding: 30px;
+}
 
-  methods: {}
-};
-</script>
+#nav a {
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+#nav a.router-link-exact-active {
+  color: #42b983;
+}
+</style>
