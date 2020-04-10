@@ -16,6 +16,10 @@ const requests = {
     return client.get("/recipe-manager/ingredient/");
   },
 
+  getIngredientUnits() {
+    return client.get("/recipe-manager/ingredient/units/");
+  },
+
   createIngredient(ingredient) {
     return client.post("/recipe-manager/ingredient/", ingredient);
   },
