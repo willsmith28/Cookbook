@@ -389,6 +389,10 @@ const getters = {
     return Object.keys(state.tags).length;
   },
 
+  allRecipes(state) {
+    return Object.values(state.recipes);
+  },
+
   getRecipe: state => id => {
     const {
       recipes: { [id]: recipe }
@@ -406,6 +410,13 @@ const getters = {
       ingredientsInRecipe: { [key]: ingredientInRecipe }
     } = state;
     return ingredientInRecipe;
+  },
+
+  ingredientInRecipeCount: state => id => {
+    const {
+      recipes: { [id]: recipe }
+    } = state;
+    return recipe.ingredients.length;
   },
 
   getStep: state => step_id => {
