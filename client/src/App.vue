@@ -24,9 +24,19 @@
         </md-toolbar>
 
         <md-list>
-          <md-list-item>
+          <md-list-item :to="{ name: 'home' }">
             <md-icon>home</md-icon>
             <span class="md-list-item-text">Recipes</span>
+          </md-list-item>
+
+          <md-list-item v-if="!loggedIn" :to="{ name: 'login' }">
+            <md-icon>account_box</md-icon>
+            <span class="md-list-item-text">Login</span>
+          </md-list-item>
+
+          <md-list-item v-else @click="logout">
+            <md-icon>account_box</md-icon>
+            <span class="md-list-item-text">Logout</span>
           </md-list-item>
         </md-list>
       </md-app-drawer>
@@ -39,16 +49,39 @@
 </template>
 
 <script>
+import { mapActions, mapGetters } from "vuex";
 export default {
   data() {
     return {
       menuVisible: false
     };
   },
+  computed: {
+    ...mapGetters("user", ["loggedIn"])
+  },
+  created() {
+    const username = localStorage.getItem("username");
+
+    if (username) {
+      this.setUsername(username);
+    }
+
+    Promise.all([
+      this.fetchAllIngredients(),
+      this.fetchAllTags(),
+      this.fetchAllRecipes()
+    ]);
+  },
   methods: {
     toggleMenu() {
       this.menuVisible = !this.menuVisible;
-    }
+    },
+    ...mapActions("recipe", [
+      "fetchAllIngredients",
+      "fetchAllTags",
+      "fetchAllRecipes"
+    ]),
+    ...mapActions("user", ["setUsername", "logout"])
   }
 };
 </script>

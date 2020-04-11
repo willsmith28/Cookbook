@@ -21,9 +21,12 @@ const actions = {
       } = await requests.login(username, password);
 
       localStorage.setItem("token", token);
+      localStorage.setItem("username", username);
+
       commit("SET_USER_NAME", username);
     } catch (error) {
       localStorage.removeItem("token");
+      localStorage.removeItem("username");
       return Promise.reject(error);
     }
   },
@@ -34,6 +37,7 @@ const actions = {
 
   logout({ commit }) {
     localStorage.removeItem("token");
+    localStorage.removeItem("username");
     commit("LOGOUT");
   }
 };
