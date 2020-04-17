@@ -130,7 +130,7 @@ class TagTestCase(TestCase):
         token = get_token()
         response = self.client.post(
             reverse("tag"),
-            {"value": "slow cooker"},
+            {"value": "slow cooker", "kind": "Prep Method"},
             content_type="application/json",
             HTTP_AUTHORIZATION=f"Token {token}",
         )
@@ -142,7 +142,7 @@ class TagTestCase(TestCase):
         Post /tag/ already exists
         """
         token = get_token()
-        test_tag = {"value": "slow cooker"}
+        test_tag = {"value": "slow cooker", "kind": "Prep Method"}
         success_response = self.client.post(
             reverse("tag"),
             test_tag,
