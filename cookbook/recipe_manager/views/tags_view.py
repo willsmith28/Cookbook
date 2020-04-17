@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework import status
-from .. import models
+from .. import models, utils, constants
 
 
 class TagView(APIView):
@@ -36,8 +36,17 @@ class TagView(APIView):
         """
         request_tag = request.data
 
+        if errors := utils.validate_required_fields(
+            request_tag, constants.REQUIRED_TAG_FIELDS
+        ):
+            return Response(
+                {"message": " ".join(errors)}, status=status.HTTP_400_BAD_REQUEST
+            )
+
         try:
-            tag, created = models.Tag.objects.get_or_create(value=request_tag["value"])
+            tag, created = models.Tag.objects.get_or_create(
+                value=request_tag["value"], defaults={"kind": request_tag["kind"]}
+            )
 
         except KeyError:
             response = Response(
