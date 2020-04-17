@@ -48,10 +48,17 @@ class Tag(models.Model):
 
     Attributes:
         value (str): name of the tag
-
+        kind (str): type of tag
     """
 
+    TAG_KIND = (
+        ("Cuisine", "Cuisine"),
+        ("Meal", "Meal"),
+        ("Prep Method", "Prep Method"),
+    )
+
     value = models.CharField(max_length=256, unique=True)
+    kind = models.CharField(max_length=256, choices=TAG_KIND)
 
     def to_json(self):
         """returns json serializable dict representation of tag
@@ -59,7 +66,11 @@ class Tag(models.Model):
         Returns:
             dict: the tag in dictionary form
         """
-        return {"id": int(self.id), "value": str(self.value)}
+        return {
+            "id": int(self.id),
+            "value": str(self.value),
+            "kind": str(self.kind),
+        }
 
     def __str__(self):
         return f"{self.value}"

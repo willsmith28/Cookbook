@@ -4,6 +4,8 @@ from rest_framework import response, status
 
 REQUIRED_INGREDIENT_FIELDS = ("name", "recipe_id")
 
+REQUIRED_TAG_FIELDS = ("value", "kind")
+
 REQUIRED_RECIPE_FIELDS = (
     "name",
     "description",
