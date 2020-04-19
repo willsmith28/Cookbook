@@ -45,6 +45,9 @@
       "parser": "babel-eslint"
     }
   },
+  "prettier": {
+    "htmlWhitespaceSensitivity": "ignore"
+  },
   "browserslist": [
     "> 1%",
     "last 2 versions",
