@@ -51,14 +51,14 @@ class Tag(models.Model):
         kind (str): type of tag
     """
 
-    TAG_KIND = (
+    KIND = (
         ("Cuisine", "Cuisine"),
         ("Meal", "Meal"),
         ("Prep Method", "Prep Method"),
     )
 
     value = models.CharField(max_length=256, unique=True)
-    kind = models.CharField(max_length=256, choices=TAG_KIND)
+    kind = models.CharField(max_length=256, choices=KIND)
 
     def to_json(self):
         """returns json serializable dict representation of tag
