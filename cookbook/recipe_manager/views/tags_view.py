@@ -6,6 +6,8 @@ from rest_framework.views import APIView
 from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework import status
+from django.db import IntegrityError
+from ..serializers import TagSerializer
 from .. import models, utils, constants
 
 
@@ -27,7 +29,7 @@ class TagView(APIView):
             Response: DRF Response
         """
         return Response(
-            tuple(tag.to_json() for tag in models.Tag.objects.all()),
+            tuple(TagSerializer(tag).data for tag in models.Tag.objects.all()),
             status=status.HTTP_200_OK,
         )
 
@@ -35,30 +37,27 @@ class TagView(APIView):
         """
         Create Tag
         """
-        request_tag = request.data
+        serializer = TagSerializer(data=request.data)
 
-        if errors := utils.validate_required_fields(
-            request_tag, constants.REQUIRED_TAG_FIELDS
-        ):
+        if not serializer.is_valid():
             return Response(
-                {"message": " ".join(errors)}, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            tag, created = models.Tag.objects.get_or_create(
-                value=request_tag["value"], defaults={"kind": request_tag["kind"]}
-            )
-
-        except KeyError:
-            response = Response(
-                {"message": "value is a required field"},
+                {
+                    "message": " ".join(
+                        f"{key}: {error}."
+                        for key, errors in serializer.errors.items()
+                        for error in errors
+                    )
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        else:
+        try:
+            serializer.save()
+            response = Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        except IntegrityError as err:
             response = Response(
-                tag.to_json(),
-                status=status.HTTP_201_CREATED if created else status.HTTP_409_CONFLICT,
+                {"message": str(err.__cause__)}, status=status.HTTP_400_BAD_REQUEST
             )
 
         return response
@@ -92,7 +91,7 @@ class TagDetailView(APIView):
             )
 
         else:
-            response = Response(tag.to_json(), status=status.HTTP_200_OK)
+            response = Response(TagSerializer(tag).data, status=status.HTTP_200_OK)
 
         return response
 
