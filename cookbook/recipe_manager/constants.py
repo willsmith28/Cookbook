@@ -20,6 +20,8 @@ REQUIRED_INGREDIENT_IN_RECIPE_FIELDS = (
     "ingredient_id",
 )
 
+REQUIRED_MEAL_PLAN_FIELDS = ("recipe_id", "planned_date")
+
 NOT_ALLOWED_RESPONSE = response.Response(
     {"message": "Cannot edit a recipe that is not yours"},
     status=status.HTTP_403_FORBIDDEN,

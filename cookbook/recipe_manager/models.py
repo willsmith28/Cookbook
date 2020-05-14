@@ -288,3 +288,45 @@ class Step(models.Model):
 
     def __repr__(self):
         return f"<Step: {self.id} recipe_id: {self.recipe_id} order: {self.order}>"
+
+
+class MealPlan(models.Model):
+    """Table for user to plan recipes to cook and keep track of leftovers.
+
+    Args:
+        recipe (Recipe): Recipe to cook
+        planned_date (date): date to cook recipe on
+        meal (str): indicates breakfast lunch or dinner. optional
+        cooked: (bool): Recipe was cooked
+        user: (User): User associated to this meal plan
+    """
+
+    MEALS = (
+        ("Breakfast", "Breakfast"),
+        ("Lunch", "Lunch"),
+        ("Dinner", "Dinner"),
+        ("Snack", "Snack"),
+    )
+    recipe = models.ForeignKey(
+        Recipe, on_delete=models.PROTECT, related_name="meal_plans"
+    )
+    planned_date = models.DateField()
+    meal = models.CharField(max_length=16, choices=MEALS, null=True)
+    cooked = models.BooleanField(default=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="meal_plans",
+    )
+
+    def to_json(self):
+        """returns json serializable dict representation of meal plan
+
+        Returns:
+            dict: dict representation of meal plan
+        """
+        return {
+            "id": int(self.id),
+            "recipe_id": int(self.recipe_id),
+            "planned_date": self.planned_date.strftime("%Y-%m-%dT%H-%M-%S"),
+            "meal": str(self.meal),
+            "cooked": self.cooked,
+        }
