@@ -12,6 +12,7 @@ urlpatterns = [
         name="ingredient-detail",
     ),
     path("tag/", views.TagView.as_view(), name="tag"),
+    path("tag/kind/", views.tag_kinds, name="tag_kind"),
     path("tag/<int:pk>/", views.TagDetailView.as_view(), name="tag-detail"),
     path("recipe/", views.RecipeView.as_view(), name="recipe"),
     path("recipe/<int:pk>/", views.RecipeDetailView.as_view(), name="recipe-detail"),

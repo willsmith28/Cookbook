@@ -3,6 +3,7 @@ Views for /tag/ and /tag/<pk>/
 """
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework import status
 from .. import models, utils, constants
@@ -94,3 +95,16 @@ class TagDetailView(APIView):
             response = Response(tag.to_json(), status=status.HTTP_200_OK)
 
         return response
+
+
+@api_view(["GET"])
+def tag_kinds(request):
+    """returns choices for kinds of tags
+
+    Args:
+        request (HttpRequest): Django HttpRequest
+
+    Returns:
+        Response: DRF Response
+    """
+    return Response(models.Tag.KIND, status=status.HTTP_200_OK)
