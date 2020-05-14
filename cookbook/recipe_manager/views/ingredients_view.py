@@ -6,6 +6,8 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.decorators import api_view
 from rest_framework import status
+from django.db import IntegrityError
+from ..serializers import IngredientSerializer
 from .. import models, utils, constants
 
 # pylint: disable=no-self-use
@@ -28,7 +30,8 @@ class IngredientView(APIView):
         """
         return Response(
             tuple(
-                ingredient.to_json() for ingredient in models.Ingredient.objects.all()
+                IngredientSerializer(ingredient).data
+                for ingredient in models.Ingredient.objects.all()
             ),
             status=status.HTTP_200_OK,
         )
@@ -42,22 +45,30 @@ class IngredientView(APIView):
         Returns:
             Response: DRF Response
         """
-        ingredient = request.data
-        if errors := utils.validate_required_fields(
-            ingredient, constants.REQUIRED_INGREDIENT_FIELDS
-        ):
+        serializer = IngredientSerializer(data=request.data)
+
+        if not serializer.is_valid():
             return Response(
-                {"message": " ".join(errors)}, status=status.HTTP_400_BAD_REQUEST,
+                {
+                    "message": " ".join(
+                        f"{key}: {error}."
+                        for key, errors in serializer.errors.items()
+                        for error in errors
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
-        ingredient, created = models.Ingredient.objects.get_or_create(
-            name=ingredient["name"], defaults={"recipe_id": ingredient["recipe_id"]}
-        )
+        try:
+            serializer.save()
+            response = Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        return Response(
-            ingredient.to_json(),
-            status=status.HTTP_201_CREATED if created else status.HTTP_409_CONFLICT,
-        )
+        except IntegrityError as err:
+            response = Response(
+                {"message": str(err.__cause__)}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return response
 
 
 class IngredientDetailView(APIView):
@@ -88,7 +99,9 @@ class IngredientDetailView(APIView):
             )
 
         else:
-            response = Response(ingredient.to_json(), status=status.HTTP_200_OK,)
+            response = Response(
+                IngredientSerializer(ingredient).data, status=status.HTTP_200_OK,
+            )
 
         return response
 

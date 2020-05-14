@@ -87,8 +87,7 @@ class IngredientTestCase(TestCase):
             content_type="application/json",
             HTTP_AUTHORIZATION=f"Token {token}",
         )
-        self.assertEqual(response_conflict.status_code, 409)
-        self.assertEqual(response_success.json()["id"], response_conflict.json()["id"])
+        self.assertEqual(response_conflict.status_code, 400)
 
     def test_get_ingredient_detail(self):
         """
