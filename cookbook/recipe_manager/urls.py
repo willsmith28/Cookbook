@@ -39,4 +39,10 @@ urlpatterns = [
         views.RecipeTagDelete.as_view(),
         name="recipe-tags-delete",
     ),
+    path("meal-plan/", views.MealPlanView.as_view(), name="meal-plan"),
+    path(
+        "meal-plan/<int:pk>/",
+        views.MealPlanDetailView.as_view(),
+        name="meal-plan-detail",
+    ),
 ]
