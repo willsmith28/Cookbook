@@ -230,4 +230,17 @@ class RecipeDetailView(APIView):
                 status=status.HTTP_200_OK,
             )
 
-        return response
+
+def _serialize_recipe_with_fk_ids(recipe: models.Recipe) -> dict:
+    serialized_recipe = RecipeSerializer(recipe).data
+    serialized_recipe["tags"] = tuple(
+        int(tag_id) for tag_id in recipe.tags.values_list("id", flat=True).all()
+    )
+    serialized_recipe["ingredients"] = tuple(
+        int(ingredient_id)
+        for ingredient_id in recipe.ingredients.values_list("id", flat=True).all()
+    )
+    serialized_recipe["steps"] = tuple(
+        int(step_id) for step_id in recipe.steps.values_list("id", flat=True).all()
+    )
+    return serialized_recipe
