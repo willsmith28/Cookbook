@@ -58,16 +58,33 @@ class RecipeView(APIView):
         Returns:
             Response: DRF Response
         """
-        return Response(
-            tuple(
-                recipe.to_json(
-                    with_tag_ids=True, with_ingredient_ids=True, with_step_ids=True
+
+        def serialize_recipes_with_fk_ids(recipes):
+            for recipe in recipes:
+                serialized_recipe = RecipeSerializer(recipe).data
+                serialized_recipe["tags"] = tuple(
+                    int(tag_id)
+                    for tag_id in recipe.tags.values_list("id", flat=True).all()
                 )
-                for recipe in models.Recipe.objects.prefetch_related(
-                    "ingredients", "steps", "tags"
-                ).all()
-            ),
-            status=status.HTTP_200_OK,
+                serialized_recipe["ingredients"] = tuple(
+                    int(ingredient_id)
+                    for ingredient_id in recipe.ingredients.values_list(
+                        "id", flat=True
+                    ).all()
+                )
+                serialized_recipe["steps"] = tuple(
+                    int(step_id)
+                    for step_id in recipe.steps.values_list("id", flat=True).all()
+                )
+
+                yield serialized_recipe
+
+        recipes = models.Recipe.objects.prefetch_related(
+            "ingredients", "steps", "tags"
+        ).all()
+
+        return Response(
+            tuple(serialize_recipes_with_fk_ids(recipes)), status=status.HTTP_200_OK,
         )
 
     def post(self, request):
