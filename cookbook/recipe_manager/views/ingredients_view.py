@@ -8,7 +8,7 @@ from rest_framework.decorators import api_view
 from rest_framework import status
 from django.db import IntegrityError
 from ..serializers import IngredientSerializer
-from .. import models, utils, constants
+from .. import models
 
 # pylint: disable=no-self-use
 class IngredientView(APIView):
@@ -50,11 +50,10 @@ class IngredientView(APIView):
         if not serializer.is_valid():
             return Response(
                 {
-                    "message": " ".join(
-                        f"{key}: {error}."
+                    "errors": {
+                        key: tuple(str(error) for error in errors)
                         for key, errors in serializer.errors.items()
-                        for error in errors
-                    )
+                    }
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
