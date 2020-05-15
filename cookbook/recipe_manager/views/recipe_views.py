@@ -60,23 +60,7 @@ class RecipeView(APIView):
 
         def serialize_recipes_with_fk_ids(recipes):
             for recipe in recipes:
-                serialized_recipe = RecipeSerializer(recipe).data
-                serialized_recipe["tags"] = tuple(
-                    int(tag_id)
-                    for tag_id in recipe.tags.values_list("id", flat=True).all()
-                )
-                serialized_recipe["ingredients"] = tuple(
-                    int(ingredient_id)
-                    for ingredient_id in recipe.ingredients.values_list(
-                        "id", flat=True
-                    ).all()
-                )
-                serialized_recipe["steps"] = tuple(
-                    int(step_id)
-                    for step_id in recipe.steps.values_list("id", flat=True).all()
-                )
-
-                yield serialized_recipe
+                yield _serialize_recipe_with_fk_ids(recipe)
 
         recipes = models.Recipe.objects.prefetch_related(
             "ingredients", "steps", "tags"
