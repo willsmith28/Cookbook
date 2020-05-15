@@ -91,16 +91,15 @@ class IngredientInRecipeSerializer(serializers.Serializer):
         return value
 
     def create(self, validated_data):
-        return models.IngredientInRecipe.objects.create(**validated_data)
+        raise NotImplementedError(
+            "Use Recipe Instance ingredients.add() to add Ingredients to Recipes"
+        )
 
     def update(self, instance, validated_data):
         instance.amount = validated_data.get("amount", instance.amount)
         instance.unit = validated_data.get("unit", instance.unit)
         instance.specifier = validated_data.get("specifier", instance.specifier)
-        instance.recipe_id = validated_data.get("recipe_id", instance.recipe_id)
-        instance.ingredient_id = validated_data.get(
-            "ingredient_id", instance.ingredient_id
-        )
+
         instance.save()
 
         return instance
