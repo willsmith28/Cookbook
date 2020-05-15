@@ -118,12 +118,13 @@ class StepSerializer(serializers.Serializer):
     recipe_id = serializers.IntegerField()
 
     def create(self, validated_data):
-        return models.Step.objects.create(**validated_data)
+        raise NotImplementedError(
+            "Use Recipe Instance steps.create() to add Steps to Recipe"
+        )
 
     def update(self, instance, validated_data):
         instance.order = validated_data.get("order", instance.order)
         instance.instruction = validated_data.get("instruction", instance.instruction)
-        instance.recipe_id = validated_data.get("recipe_id", instance.recipe_id)
         instance.save()
 
         return instance
