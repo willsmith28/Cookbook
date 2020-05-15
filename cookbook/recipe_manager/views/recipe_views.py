@@ -253,32 +253,22 @@ class RecipeDetailView(APIView):
         ):
             return constants.NOT_ALLOWED_RESPONSE
 
-        request_recipe = utils.extract_required_fields(
-            request.data, constants.REQUIRED_RECIPE_FIELDS
+        recipe_serializer = RecipeSerializer(
+            recipe, data={**request.data, "author_id": request.user.id}
         )
-        edit = False
 
-        for field, value in request_recipe.items():
-            if value is not None and value != getattr(recipe, field):
-                setattr(recipe, field, value)
-                edit = True
+        if recipe_serializer.is_valid():
+            try:
+                recipe = recipe_serializer.save()
 
-        try:
-            if edit:
-                recipe.save()
+            except IntegrityError as err:
+                return Response(
+                    {"message": str(err.__cause__)}, status=status.HTTP_400_BAD_REQUEST
+                )
 
-        except IntegrityError as err:
-            response = Response(
-                {"message": str(err.__cause__)}, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        else:
-            response = Response(
-                recipe.to_json(
-                    with_ingredient_ids=True, with_step_ids=True, with_tag_ids=True
-                ),
-                status=status.HTTP_200_OK,
-            )
+        return Response(
+            _serialize_recipe_with_fk_ids(recipe), status=status.HTTP_200_OK
+        )
 
 
 def _serialize_recipe_with_fk_ids(recipe: models.Recipe) -> dict:
