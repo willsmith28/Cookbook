@@ -11,7 +11,7 @@ class IngredientSerializer(serializers.Serializer):
         serializers ([type]): [description]
     """
 
-    id = serializers.IntegerField(required=False)
+    id = serializers.IntegerField(read_only=True)
     name = serializers.CharField(max_length=256)
     recipe_id = serializers.IntegerField(allow_null=True)
 
@@ -33,7 +33,7 @@ class TagSerializer(serializers.Serializer):
         serializers ([type]): [description]
     """
 
-    id = serializers.IntegerField(required=False)
+    id = serializers.IntegerField(read_only=True)
     value = serializers.CharField(max_length=256)
     kind = serializers.ChoiceField(models.Tag.KIND)
 
@@ -69,7 +69,6 @@ class IngredientInRecipeSerializer(serializers.Serializer):
     amount = serializers.DecimalField(max_digits=5, decimal_places=2)
     unit = serializers.CharField(max_length=16)
     specifier = serializers.CharField(max_length=256, allow_blank=True)
-    recipe_id = serializers.IntegerField()
     ingredient_id = serializers.IntegerField()
 
     def validate_unit(self, value):
@@ -77,6 +76,9 @@ class IngredientInRecipeSerializer(serializers.Serializer):
 
         Args:
             value ([type]): [description]
+
+        Raises:
+            serializers.ValidationError: [description]
 
         Returns:
             [type]: [description]
@@ -112,10 +114,9 @@ class StepSerializer(serializers.Serializer):
         serializers ([type]): [description]
     """
 
-    id = serializers.IntegerField(required=False)
-    order = serializers.IntegerField(min_value=1)
+    id = serializers.IntegerField(read_only=True)
     instruction = serializers.CharField()
-    recipe_id = serializers.IntegerField()
+    order = serializers.IntegerField(min_value=1, read_only=True)
 
     def create(self, validated_data):
         raise NotImplementedError(
@@ -137,14 +138,14 @@ class RecipeSerializer(serializers.Serializer):
         serializers ([type]): [description]
     """
 
-    id = serializers.IntegerField(required=False)
+    id = serializers.IntegerField(read_only=True)
     name = serializers.CharField(max_length=256)
     description = serializers.CharField()
     servings = serializers.IntegerField(min_value=1)
     cook_time = serializers.CharField(max_length=128)
-    created_on = serializers.DateTimeField()
-    last_updated_on = serializers.DateTimeField()
-    author_id = serializers.IntegerField(allow_null=True, write_only=True)
+    created_on = serializers.DateTimeField(read_only=True)
+    last_updated_on = serializers.DateTimeField(read_only=True)
+    author_id = serializers.IntegerField(allow_null=True)
 
     def create(self, validated_data):
         return models.Recipe.objects.create(**validated_data)
@@ -166,7 +167,7 @@ class MealPlanSerializer(serializers.Serializer):
         serializers ([type]): [description]
     """
 
-    id = serializers.IntegerField(required=False)
+    id = serializers.IntegerField(read_only=True)
     recipe_id = serializers.IntegerField()
     planned_date = serializers.DateField()
     meal = serializers.CharField(max_length=16, allow_null=True)
