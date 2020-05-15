@@ -10,7 +10,6 @@ from ..serializers import (
     RecipeSerializer,
     IngredientInRecipeSerializer,
     StepSerializer,
-    TagSerializer,
 )
 from .. import models, utils, constants
 
