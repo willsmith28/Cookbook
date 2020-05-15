@@ -222,10 +222,7 @@ class RecipeDetailView(APIView):
 
         else:
             response = Response(
-                recipe.to_json(
-                    with_ingredient_ids=True, with_step_ids=True, with_tag_ids=True,
-                ),
-                status=status.HTTP_200_OK,
+                _serialize_recipe_with_fk_ids(recipe), status=status.HTTP_200_OK,
             )
 
         return response
