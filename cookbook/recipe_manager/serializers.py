@@ -15,6 +15,19 @@ class IngredientSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=256)
     recipe_id = serializers.IntegerField(allow_null=True)
 
+    def validate_recipe_id(self, value):
+        """
+        Validate Recipe ID exists
+        """
+        try:
+            if value is not None:
+                models.Recipe.objects.get(id=value)
+
+        except models.Recipe.DoesNotExist:
+            raise serializers.ValidationError("Recipe with that ID does not exist")
+
+        return value
+
     def create(self, validated_data):
         return models.Ingredient.objects.create(**validated_data)
 
@@ -59,6 +72,19 @@ class IngredientInRecipeSerializer(serializers.Serializer):
     unit = serializers.ChoiceField(models.IngredientInRecipe.UNITS)
     specifier = serializers.CharField(max_length=256, allow_blank=True)
     ingredient_id = serializers.IntegerField()
+    recipe_id = serializers.IntegerField(required=False)
+
+    def validate_ingredient_id(self, value):
+        """
+        Validate Ingredient ID exists
+        """
+        try:
+            models.Ingredient.objects.get(id=value)
+
+        except models.Ingredient.DoesNotExist:
+            raise serializers.ValidationError("Ingredient with that ID does not exist")
+
+        return value
 
     def create(self, validated_data):
         raise NotImplementedError(
@@ -84,7 +110,8 @@ class StepSerializer(serializers.Serializer):
 
     id = serializers.IntegerField(read_only=True)
     instruction = serializers.CharField()
-    order = serializers.IntegerField(min_value=1, read_only=True)
+    order = serializers.IntegerField(min_value=1)
+    recipe_id = serializers.IntegerField(required=False)
 
     def create(self, validated_data):
         raise NotImplementedError(
@@ -141,6 +168,18 @@ class MealPlanSerializer(serializers.Serializer):
     meal = serializers.CharField(max_length=16, allow_null=True)
     cooked = serializers.BooleanField()
     user_id = serializers.IntegerField()
+
+    def validate_recipe_id(self, value):
+        """
+        Validate Recipe ID exists
+        """
+        try:
+            models.Recipe.objects.get(id=value)
+
+        except models.Recipe.DoesNotExist:
+            raise models.Recipe.DoesNotExist
+
+        return value
 
     def create(self, validated_data):
         return models.MealPlan.objects.create(**validated_data)
