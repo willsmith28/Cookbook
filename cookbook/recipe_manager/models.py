@@ -24,18 +24,6 @@ class Ingredient(models.Model):
         blank=True,
     )
 
-    def to_json(self):
-        """returns json serializable dict representation of ingredient
-
-        Returns:
-            dict: the ingredient in dictionary form
-        """
-        return {
-            "id": int(self.id),
-            "name": str(self.name),
-            "recipe_id": int(self.recipe_id) if self.recipe_id else None,
-        }
-
     def __str__(self):
         return f"{self.name}"
 
@@ -59,18 +47,6 @@ class Tag(models.Model):
 
     value = models.CharField(max_length=256, unique=True)
     kind = models.CharField(max_length=256, choices=KIND)
-
-    def to_json(self):
-        """returns json serializable dict representation of tag
-
-        Returns:
-            dict: the tag in dictionary form
-        """
-        return {
-            "id": int(self.id),
-            "value": str(self.value),
-            "kind": str(self.kind),
-        }
 
     def __str__(self):
         return f"{self.value}"
@@ -127,49 +103,6 @@ class Recipe(models.Model):
         settings.AUTH_USER_MODEL, related_name="saved_recipes"
     )
 
-    def to_json(
-        self, with_ingredient_ids=False, with_step_ids=False, with_tag_ids=False
-    ):
-        """
-        returns json serializable dict representation of recipe
-
-        Args:
-            with_ingredient_ids (bool, optional): include list of ingredient IDs. Defaults to False.
-            with_step_ids (bool, optional): include list of step IDs. Defaults to False.
-            with_tag_ids (bool, optional): include list of tag IDs. Defaults to False.
-
-        Returns:
-            dict: the recipe in dictionary form
-        """
-        recipe = {
-            "id": int(self.id),
-            "name": str(self.name),
-            "description": str(self.description),
-            "servings": int(self.servings),
-            "cook_time": str(self.cook_time),
-            "created_on": self.created_on.strftime("%Y-%m-%dT%H-%M-%S"),
-            "last_updated_on": self.last_updated_on.strftime("%Y-%m-%dT%H-%M-%S"),
-        }
-
-        if with_tag_ids:
-            recipe["tags"] = tuple(
-                int(tag_id) for tag_id in self.tags.values_list("id", flat=True).all()
-            )
-
-        if with_ingredient_ids:
-            recipe["ingredients"] = tuple(
-                int(ingredient_id)
-                for ingredient_id in self.ingredients.values_list("id", flat=True).all()
-            )
-
-        if with_step_ids:
-            recipe["steps"] = tuple(
-                int(step_id)
-                for step_id in self.steps.values_list("id", flat=True).all()
-            )
-
-        return recipe
-
     def __str__(self):
         return f"{self.name}"
 
@@ -222,20 +155,6 @@ class IngredientInRecipe(models.Model):
 
         unique_together = ("recipe_id", "ingredient_id")
 
-    def to_json(self):
-        """returns json serializable dict representation of recipe_ingredient
-
-        Returns:
-            dict: the recipe_ingredient in dictionary form
-        """
-        return {
-            "amount": str(self.amount),
-            "unit": str(self.unit),
-            "specifier": str(self.specifier),
-            "recipe_id": int(self.recipe_id),
-            "ingredient_id": int(self.ingredient_id),
-        }
-
     def __str__(self):
         return f"{self.amount} {self.unit} {self.specifier}"
 
@@ -270,19 +189,6 @@ class Step(models.Model):
         unique_together = ("order", "recipe_id")
         ordering = ("order",)
 
-    def to_json(self):
-        """returns json serializable dict representation of step
-
-        Returns:
-            dict: the step in dictionary form
-        """
-        return {
-            "id": int(self.id),
-            "order": int(self.order),
-            "instruction": str(self.instruction),
-            "recipe_id": int(self.recipe_id),
-        }
-
     def __str__(self):
         return f"{self.order}) {self.instruction}"
 
@@ -316,17 +222,3 @@ class MealPlan(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="meal_plans",
     )
-
-    def to_json(self):
-        """returns json serializable dict representation of meal plan
-
-        Returns:
-            dict: dict representation of meal plan
-        """
-        return {
-            "id": int(self.id),
-            "recipe_id": int(self.recipe_id),
-            "planned_date": self.planned_date.strftime("%Y-%m-%dT%H-%M-%S"),
-            "meal": str(self.meal),
-            "cooked": self.cooked,
-        }
