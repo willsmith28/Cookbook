@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework import status
+from ..serializers import StepSerializer
 from .. import models, utils, constants
 
 
@@ -39,13 +40,11 @@ class RecipeStep(APIView):
             recipe = models.Recipe.objects.prefetch_related("steps").get(id=recipe_pk)
 
         except models.Recipe.DoesNotExist:
-            response = Response(
-                {"message": "Recipe with that id not found"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            response = Response(status=status.HTTP_404_NOT_FOUND,)
+
         else:
             response = Response(
-                tuple(step.to_json() for step in recipe.steps.all()),
+                tuple(StepSerializer(step).data for step in recipe.steps.all()),
                 status=status.HTTP_200_OK,
             )
 
@@ -63,38 +62,32 @@ class RecipeStep(APIView):
         """
         try:
             recipe = models.Recipe.objects.get(id=recipe_pk)
+
         except models.Recipe.DoesNotExist:
-            return Response(
-                {"message": "Recipe with that id not found"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            return Response(status=status.HTTP_404_NOT_FOUND,)
 
         if not utils.user_owns_item(
             recipe.author_id, request.user.id, request.user.is_superuser
         ):
             return constants.NOT_ALLOWED_RESPONSE
 
-        step = request.data
         current_step_count = recipe.steps.count()
+        serializer = StepSerializer(
+            data={
+                **request.data,
+                "recipe_id": recipe_pk,
+                "order": current_step_count + 1,
+            }
+        )
 
-        try:
-            step = recipe.steps.create(
-                instruction=step["instruction"], order=current_step_count + 1
-            )
-
-        except IntegrityError as err:
+        if not serializer.is_valid():
             response = Response(
-                {"message": str(err.__cause__)}, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        except KeyError:
-            response = Response(
-                {"message": "instruction is a required field"},
+                {"errors": utils.serialize_errors(serializer.errors)},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
         else:
-            response = Response(step.to_json(), status=status.HTTP_201_CREATED)
+            serializer.save()
+            response = Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return response
 
@@ -140,7 +133,7 @@ class RecipeStepDetail(APIView):
             )
 
         else:
-            response = Response(step.to_json(), status=status.HTTP_200_OK)
+            response = Response(StepSerializer(step).data, status=status.HTTP_200_OK)
 
         return response
 
@@ -176,24 +169,13 @@ class RecipeStepDetail(APIView):
         ):
             return constants.NOT_ALLOWED_RESPONSE
 
-        try:
-            if (instruction := request.data["instruction"]) != step.instruction:
-                step.instruction = instruction
-                step.save()
+        serializer = StepSerializer(step, data={**request.data, "order": step.order})
 
-        except IntegrityError as err:
-            response = Response(
-                {"message": str(err.__cause__)}, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        except KeyError:
-            response = Response(
-                {"message": "instruction is a required field."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
+        if not serializer.is_valid():
+            response = Response({"errors": utils.serialize_errors(serializer.errors)})
         else:
-            response = Response(step.to_json(), status=status.HTTP_200_OK)
+            serializer.save()
+            response = Response(serializer.data, status=status.HTTP_200_OK)
 
         return response
 
