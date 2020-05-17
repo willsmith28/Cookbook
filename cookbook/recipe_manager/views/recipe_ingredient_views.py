@@ -6,7 +6,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework import status
-from .. import models, utils, constants
+from ..serializers import IngredientInRecipeSerializer
+from .. import models, utils
 
 
 class RecipeIngredient(APIView):
@@ -43,7 +44,7 @@ class RecipeIngredient(APIView):
         else:
             response = Response(
                 tuple(
-                    ingredient.to_json()
+                    IngredientInRecipeSerializer(ingredient).data
                     for ingredient in models.IngredientInRecipe.objects.filter(
                         recipe_id=recipe.id
                     )
@@ -63,53 +64,50 @@ class RecipeIngredient(APIView):
         Returns:
             Response: DRF Response
         """
-        recipe_ingredient = request.data
 
         try:
             recipe = models.Recipe.objects.get(id=recipe_pk)
-            ingredient = models.Ingredient.objects.get(
-                id=recipe_ingredient["ingredient_id"]
-            )
+
         except models.Recipe.DoesNotExist:
             return Response(
-                {"message": "Recipe was not found"}, status=status.HTTP_404_NOT_FOUND
-            )
-
-        except models.Ingredient.DoesNotExist:
-            return Response(
-                {"message": "Invalid ingredient_id"}, status=status.HTTP_400_BAD_REQUEST
+                {"errors": {"non_field_errors": ["No Recipe was found with that ID"]}},
+                status=status.HTTP_404_NOT_FOUND,
             )
 
         if not utils.user_owns_item(
             recipe.author_id, request.user.id, request.user.is_superuser
         ):
-            return constants.NOT_ALLOWED_RESPONSE
-
-        if errors := utils.validate_required_fields(
-            recipe_ingredient, constants.REQUIRED_INGREDIENT_IN_RECIPE_FIELDS
-        ):
             return Response(
-                {"message": ". ".join(errors)}, status=status.HTTP_400_BAD_REQUEST
+                {
+                    "errors": {
+                        "non_field_errors": [
+                            "Cannot add ingredients to a recipe that is not yours"
+                        ]
+                    }
+                },
+                status=status.HTTP_403_FORBIDDEN,
             )
 
-        recipe_ingredient = utils.extract_required_fields(
-            recipe_ingredient, constants.REQUIRED_INGREDIENT_IN_RECIPE_FIELDS
-        )
+        data = {**request.data, "recipe_id": recipe.id}
+        serializer = IngredientInRecipeSerializer(data=data)
+
+        if not serializer.is_valid():
+            return Response(
+                {"errors": utils.serialize_errors(serializer.errors)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         try:
-            recipe_ingredient = models.IngredientInRecipe.objects.create(
-                recipe_id=recipe.id, ingredient=ingredient, **recipe_ingredient,
-            )
+            serializer.save()
 
         except IntegrityError as err:
             response = Response(
-                {"message": str(err.__cause__)}, status=status.HTTP_400_BAD_REQUEST
+                {"errors": {"non_field_errors": [str(err.__cause__)]}},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         else:
-            response = Response(
-                recipe_ingredient.to_json(), status=status.HTTP_201_CREATED,
-            )
+            response = Response(serializer.data, status=status.HTTP_201_CREATED,)
 
         return response
 
@@ -144,7 +142,7 @@ class RecipeIngredientDetail(APIView):
             Response: DRF Response
         """
         try:
-            recipe_ingredient = models.IngredientInRecipe.objects.get(
+            ingredient_in_recipe = models.IngredientInRecipe.objects.get(
                 ingredient_id=ingredient_pk, recipe_id=recipe_pk
             )
 
@@ -154,7 +152,10 @@ class RecipeIngredientDetail(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
         else:
-            response = Response(recipe_ingredient.to_json(), status=status.HTTP_200_OK,)
+            response = Response(
+                IngredientInRecipeSerializer(ingredient_in_recipe).data,
+                status=status.HTTP_200_OK,
+            )
 
         return response
 
@@ -171,7 +172,7 @@ class RecipeIngredientDetail(APIView):
             Response: DRF Response
         """
         try:
-            recipe_ingredient = models.IngredientInRecipe.objects.select_related(
+            ingredient_in_recipe = models.IngredientInRecipe.objects.select_related(
                 "ingredient", "recipe"
             ).get(ingredient_id=ingredient_pk, recipe_id=recipe_pk)
 
@@ -181,33 +182,41 @@ class RecipeIngredientDetail(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        if request.user.id != recipe_ingredient.recipe.author_id:
-            if not request.user.is_superuser:
-                return Response(
-                    {"message": "Cannot edit a recipe that is not yours"},
-                    status=status.HTTP_403_FORBIDDEN,
-                )
+        if not utils.user_owns_item(
+            ingredient_in_recipe.recipe.author_id,
+            request.user.id,
+            request.user.is_superuser,
+        ):
+            return Response(
+                {
+                    "errors": {
+                        "non_field_errors": [
+                            "Cannot edit ingredients in a recipe that is not yours"
+                        ]
+                    }
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
-        request_recipe_ingredient = utils.extract_required_fields(
-            request.data, constants.REQUIRED_INGREDIENT_IN_RECIPE_FIELDS
-        )
+        data = {**request.data, "recipe_id": recipe_pk, "ingredient_id": ingredient_pk}
 
-        edited = False
-        for key, value in request_recipe_ingredient.items():
-            if value is not None and value != getattr(recipe_ingredient, key):
-                setattr(recipe_ingredient, key, value)
-                edited = True
+        serializer = IngredientInRecipeSerializer(ingredient_in_recipe, data=data)
+
+        if not serializer.is_valid():
+            return Response(
+                {"errors": utils.serialize_errors(serializer.errors)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         try:
-            if edited:
-                recipe_ingredient.save()
+            serializer.save()
 
         except IntegrityError as err:
             response = Response(
                 {"message": str(err.__cause__)}, status=status.HTTP_409_CONFLICT
             )
         else:
-            response = Response(recipe_ingredient.to_json(), status=status.HTTP_200_OK,)
+            response = Response(serializer.data, status=status.HTTP_200_OK,)
 
         return response
 
@@ -224,21 +233,12 @@ class RecipeIngredientDetail(APIView):
             Response: DRF Response
         """
         try:
-            models.Recipe.objects.values("id").get(id=recipe_pk)
             recipe_ingredient = models.IngredientInRecipe.objects.get(
                 ingredient_id=ingredient_pk, recipe_id=recipe_pk
             )
-        except models.Recipe.DoesNotExist:
-            response = Response(
-                {"message": "Recipe with that id was not found"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
 
         except models.IngredientInRecipe.DoesNotExist:
-            response = Response(
-                {"message": "Ingredient on that recipe was not found"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            response = Response(status=status.HTTP_404_NOT_FOUND,)
 
         else:
             recipe_ingredient.delete()
