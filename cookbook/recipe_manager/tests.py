@@ -215,7 +215,7 @@ class RecipeTestCase(TestCase):
             "servings": "3",
             "cook_time": "1  hour",
             "ingredients": 23,
-            "steps": "step",
+            "steps": 1,
             "tags": 3,
         }
 
