@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
+from ..serializers import MealPlanSerializer
 from .. import models, utils, constants
 
 
@@ -43,7 +44,7 @@ class MealPlanView(APIView):
 
         return Response(
             tuple(
-                meal_plan.to_json()
+                MealPlanSerializer(meal_plan).data
                 for meal_plan in models.MealPlan.objects.filter(**query)
             ),
             status=status.HTTP_200_OK,
@@ -58,31 +59,18 @@ class MealPlanView(APIView):
         Returns:
             Response: DRF Response
         """
-
-        if errors := utils.validate_required_fields(
-            request.data, constants.REQUIRED_MEAL_PLAN_FIELDS
-        ):
-            return Response(
-                {"message": " ".join(errors)}, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        meal_plan_request = utils.extract_required_fields(
-            request.data, (*constants.REQUIRED_MEAL_PLAN_FIELDS, "meal")
+        serializer = MealPlanSerializer(
+            data={**request.data, "user_id": request.user.id}
         )
-        user = request.user
 
-        try:
-            meal_plan = models.MealPlan.objects.create(
-                user_id=user.id, **meal_plan_request
-            )
-
-        except IntegrityError as err:
+        if not serializer.is_valid():
             response = Response(
-                {"message": str(err.__cause__)}, status=status.HTTP_400_BAD_REQUEST
+                {"errors": utils.serialize_errors(serializer.errors)},
+                status=status.HTTP_400_BAD_REQUEST,
             )
-
         else:
-            response = Response(meal_plan.to_json(), status=status.HTTP_200_OK)
+            serializer.save()
+            response = Response(serializer.data, status.HTTP_201_CREATED)
 
         return response
 
@@ -103,36 +91,20 @@ class MealPlanDetailView(APIView):
             meal_plan = models.MealPlan.objects.get(id=pk)
 
         except models.MealPlan.DoesNotExist:
-            return Response(
-                {"message": "No Meal Plan was found with that ID"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            return Response(status=status.HTTP_404_NOT_FOUND,)
 
         if not utils.user_owns_item(
             meal_plan.user_id, request.user.id, request.user.is_superuser
         ):
             return constants.NOT_ALLOWED_RESPONSE
 
-        request_meal_plan = utils.extract_required_fields(
-            request.data, (*constants.REQUIRED_MEAL_PLAN_FIELDS, "meal")
-        )
-        edit = False
+        serializer = MealPlanSerializer(meal_plan, data=request.data)
 
-        for field, value in request_meal_plan.values():
-            if value is not None and value != getattr(meal_plan, field):
-                setattr(meal_plan, field, value)
-                edit = True
-
-        try:
-            if edit:
-                meal_plan.save()
-
-        except IntegrityError as err:
-            response = Response(
-                {"message": str(err.__cause__)}, status=status.HTTP_400_BAD_REQUEST
-            )
+        if not serializer.is_valid():
+            response = Response({"errors": utils.serialize_errors(serializer.errors)})
 
         else:
-            response = Response(meal_plan.to_json(), status=status.HTTP_200_OK)
+            serializer.save()
+            response = Response(serializer.data, status=status.HTTP_200_OK)
 
         return response
