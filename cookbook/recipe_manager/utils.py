@@ -1,7 +1,7 @@
 """Common functionality like creating and validating models
 """
 from typing import Iterable, Union, Tuple
-from . import models, constants
+from . import models, constants, serializers
 
 
 def user_owns_item(author_id: int, user_id: int, is_superuser: bool) -> bool:
@@ -16,6 +16,20 @@ def user_owns_item(author_id: int, user_id: int, is_superuser: bool) -> bool:
         bool: [description]
     """
     return user_id == author_id or is_superuser
+
+
+def serialize_errors(errors: dict) -> dict:
+    """Creates a copy of serializer errors dict with error messages cast to string
+
+    Args:
+        errors (dict): serializer errors dict
+
+    Returns:
+        dict: new dict with error messages cast to string
+    """
+    return {
+        key: tuple(str(error) for error in errors) for key, errors in errors.items()
+    }
 
 
 def validate_required_fields(item: dict, required_fields: Iterable[str]) -> Tuple[str]:
