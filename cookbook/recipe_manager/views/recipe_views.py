@@ -80,67 +80,18 @@ class RecipeView(APIView):
             Response: DRF Response
         """
 
-        def add_errors_to_dict(errors, key, serializers):
-            for index, serializer in serializers:
-                errors[key][index] = {
-                    key: tuple(str(error) for error in errors)
-                    for key, errors in serializer.errors.items()
-                }
-
         user = request.user
-        data = {**request.data, "author_id": user.id}
-        errors = {}
-
-        try:
-            ingredient_in_recipe_serializers = tuple(
-                IngredientInRecipeSerializer(data=ingredient)
-                for ingredient in data.pop("ingredients", ())
-            )
-            step_serializers = tuple(
-                StepSerializer(data=step) for step in data.pop("steps", ())
-            )
-            tag_ids = tuple(tag_id for tag_id in data.pop("tags", ()))
-        except TypeError:
-            return Response(
-                {
-                    "errors": {
-                        "message": '"ingredients", "steps", and "tags" must all be Arrays'
-                    }
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        recipe_serializer = RecipeSerializer(data=data)
-
-        if not recipe_serializer.is_valid():
-            errors["recipe"] = {
-                key: tuple(str(error) for error in errors)
-                for key, errors in recipe_serializer.errors.items()
-            }
-
-        if invalid_serializers := tuple(
-            (str(index), serializer)
-            for index, serializer in enumerate(ingredient_in_recipe_serializers)
-            if not serializer.is_valid()
-        ):
-            errors["ingredients"] = {}
-            add_errors_to_dict(errors, "ingredients", invalid_serializers)
-
-        if invalid_serializers := tuple(
-            (str(index), serializer)
-            for index, serializer in enumerate(step_serializers)
-            if not serializer.is_valid()
-        ):
-            errors["steps"] = {}
-            add_errors_to_dict(errors, "steps", invalid_serializers)
+        errors, serializers = utils.validate_recipe(
+            {**request.data, "author_id": user.id}
+        )
 
         if errors:
             return Response({"errors": errors}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             with transaction.atomic():
-                recipe_instance = recipe_serializer.save()
-                for serializer in ingredient_in_recipe_serializers:
+                recipe_instance = serializers["recipe"].save()
+                for serializer in serializers["ingredients"]:
                     ingredient = serializer.data
                     recipe_instance.ingredients.add(
                         models.Ingredient.objects.get(
@@ -149,13 +100,11 @@ class RecipeView(APIView):
                         through_defaults=ingredient,
                     )
 
-                for index, serializer in enumerate(step_serializers, 1):
+                for serializer in serializers["steps"]:
                     step = serializer.data
-                    recipe_instance.steps.create(
-                        instruction=step["instruction"], order=index
-                    )
+                    recipe_instance.steps.create(**step)
 
-                for tag_id in tag_ids:
+                for tag_id in serializers["tag_ids"]:
                     try:
                         recipe_instance.tags.add(models.Tag.objects.get(id=tag_id))
 
