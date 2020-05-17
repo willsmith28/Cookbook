@@ -5,7 +5,7 @@ from django.test import TestCase, Client
 from django.urls import reverse
 from model_bakery import baker, seq
 from users.models import User
-from . import models, constants
+from . import models, constants, serializers
 
 TEST_USER_NAME = "testUser"
 TEST_EMAIL = "test@test.net"
@@ -363,9 +363,10 @@ class RecipeTestCase(TestCase):
         """
         token = get_token()
         updated_recipe = {
-            **self.recipe1.to_json(),
+            **serializers.RecipeSerializer(self.recipe1).data,
             "name": "new_name",
         }
+
         updated_recipe.pop("created_on")
         updated_recipe.pop("last_updated_on")
 
@@ -386,7 +387,7 @@ class RecipeTestCase(TestCase):
         """
         token = get_token(TEST_USER_NAME1, TEST_PASSWORD)
         updated_recipe = {
-            **self.recipe1.to_json(),
+            **serializers.RecipeSerializer(self.recipe1).data,
             "name": "new_name",
         }
         response = self.client.put(
@@ -521,7 +522,7 @@ class RecipeIngredientCase(TestCase):
             recipe=self.recipe1, ingredient=self.recipe1.ingredients.first(),
         )
         test_recipe_ingredient = {
-            **recipe_ingredient.to_json(),
+            **serializers.IngredientInRecipeSerializer(recipe_ingredient).data,
             "amount": str(recipe_ingredient.amount + 1),
             "specifier": "something new",
         }
@@ -550,7 +551,7 @@ class RecipeIngredientCase(TestCase):
             recipe=self.recipe1, ingredient=self.recipe1.ingredients.first()
         )
         test_recipe_ingredient = {
-            **recipe_ingredient.to_json(),
+            **serializers.IngredientInRecipeSerializer(recipe_ingredient).data,
             "amount": recipe_ingredient.amount + 1,
         }
         response = self.client.put(
