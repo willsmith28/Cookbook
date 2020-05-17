@@ -87,9 +87,7 @@ class IngredientInRecipeSerializer(serializers.Serializer):
         return value
 
     def create(self, validated_data):
-        raise NotImplementedError(
-            "Use Recipe Instance ingredients.add() to add Ingredients to Recipes"
-        )
+        return models.IngredientInRecipe.objects.create(**validated_data)
 
     def update(self, instance, validated_data):
         instance.amount = validated_data.get("amount", instance.amount)
@@ -114,9 +112,7 @@ class StepSerializer(serializers.Serializer):
     recipe_id = serializers.IntegerField(required=False)
 
     def create(self, validated_data):
-        raise NotImplementedError(
-            "Use Recipe Instance steps.create() to add Steps to Recipe"
-        )
+        raise models.Step.objects.create(**validated_data)
 
     def update(self, instance, validated_data):
         instance.order = validated_data.get("order", instance.order)
