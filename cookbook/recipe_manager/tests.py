@@ -206,7 +206,7 @@ class RecipeTestCase(TestCase):
                     "ingredient_id": int(ingredient_set[0].id),
                 }
             ],
-            "steps": [{"instruction": "cut chicken"}, {"instruction": "cook chicken"},],
+            "steps": ["cut chicken", "cook chicken"],
             "tags": [int(tag.id) for tag in tag_set],
         }
         self.test_invalid_recipe = {
@@ -459,7 +459,7 @@ class RecipeIngredientCase(TestCase):
         token = get_token()
         response = self.client.post(
             reverse("recipe-ingredients", kwargs={"recipe_pk": self.recipe1.id}),
-            {**self.test_recipe_ingredient, "ingredient_id": 34},
+            {**self.test_recipe_ingredient, "ingredient_id": 999999},
             content_type="application/json",
             HTTP_AUTHORIZATION=f"Token {token}",
         )
