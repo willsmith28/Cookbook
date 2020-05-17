@@ -67,30 +67,9 @@ class IngredientInRecipeSerializer(serializers.Serializer):
     """
 
     amount = serializers.DecimalField(max_digits=5, decimal_places=2)
-    unit = serializers.CharField(max_length=16)
+    unit = serializers.ChoiceField(models.IngredientInRecipe.UNITS)
     specifier = serializers.CharField(max_length=256, allow_blank=True)
     ingredient_id = serializers.IntegerField()
-
-    def validate_unit(self, value):
-        """[summary]
-
-        Args:
-            value ([type]): [description]
-
-        Raises:
-            serializers.ValidationError: [description]
-
-        Returns:
-            [type]: [description]
-        """
-        if not any(
-            value == unit_short
-            for _, units in models.IngredientInRecipe.UNITS
-            for unit_short, _ in units
-        ):
-            raise serializers.ValidationError("Invalid Unit")
-
-        return value
 
     def create(self, validated_data):
         raise NotImplementedError(
