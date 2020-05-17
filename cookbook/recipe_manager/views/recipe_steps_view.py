@@ -1,6 +1,7 @@
 """
 Views for /recipe/<recipe_pk>/steps/ and /recipe/<recipe_pk>/steps/<step_pk>
 """
+
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
@@ -118,14 +119,8 @@ class RecipeStepDetail(APIView):
         try:
             step = models.Step.objects.get(recipe_id=recipe_pk, order=order)
 
-        except models.Recipe.DoesNotExist:
-            response = Response(status=status.HTTP_404_NOT_FOUND,)
-
         except models.Step.DoesNotExist:
-            response = Response(
-                {"message": "Step with that id not found"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            response = Response(status=status.HTTP_404_NOT_FOUND,)
 
         else:
             response = Response(StepSerializer(step).data, status=status.HTTP_200_OK)
@@ -144,23 +139,15 @@ class RecipeStepDetail(APIView):
             Response: DRF response
         """
         try:
-            recipe = models.Recipe.objects.values("author_id").get(id=recipe_pk)
-            step = models.Step.objects.get(recipe_id=recipe_pk, order=order)
-
-        except models.Recipe.DoesNotExist:
-            return Response(
-                {"message": "Recipe with that id not found"},
-                status=status.HTTP_404_NOT_FOUND,
+            step = models.Step.objects.select_related("recipe").get(
+                recipe_id=recipe_pk, order=order
             )
 
         except models.Step.DoesNotExist:
-            return Response(
-                {"message": "Recipe with that id not found"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            return Response(status=status.HTTP_404_NOT_FOUND,)
 
         if not utils.user_owns_item(
-            recipe["author_id"], request.user.id, request.user.is_superuser
+            step.recipe.author_id, request.user.id, request.user.is_superuser
         ):
             return constants.NOT_ALLOWED_RESPONSE
 
@@ -186,27 +173,19 @@ class RecipeStepDetail(APIView):
             Response: DRF response
         """
         try:
-            recipe = models.Recipe.objects.get(id=recipe_pk)
-            step = models.Step.objects.get(recipe_id=recipe_pk, order=order)
-
-        except models.Recipe.DoesNotExist:
-            return Response(
-                {"message": "Recipe with that id not found"},
-                status=status.HTTP_404_NOT_FOUND,
+            step = models.Step.objects.select_related("recipe").get(
+                recipe_id=recipe_pk, order=order
             )
 
         except models.Step.DoesNotExist:
-            return Response(
-                {"message": "Recipe with that id not found"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            return Response(status=status.HTTP_404_NOT_FOUND,)
 
         if not utils.user_owns_item(
-            recipe.author_id, request.user.id, request.user.is_superuser
+            step.recipe.author_id, request.user.id, request.user.is_superuser
         ):
             return constants.NOT_ALLOWED_RESPONSE
 
-        if recipe.steps.count() == step.order:
+        if models.Step.objects.filter(recipe_id=recipe_pk).count() == step.order:
             step.delete()
             response = Response(status=status.HTTP_204_NO_CONTENT)
 
