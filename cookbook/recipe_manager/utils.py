@@ -61,134 +61,83 @@ def extract_required_fields(item: dict, required_fields: Iterable[str]) -> dict:
     return {field: item.get(field) for field in required_fields}
 
 
-def validate_recipe(recipe: dict) -> Tuple[str]:
-    """check if a recipe is valid. includes ingredients step and tag validation
-    {
-        name: str
-        description: str
-        servings: int
-        cook_time: str,
-        ingredients: [{
-            amount: decimal,
-            unit: str,
-            specifier: str,
-            ingredient_id: (int, str)
-        }, ...]
-        steps: [{
-            'instruction': str,
-        }, ...]
-        tags: [int, ...]
-    }
+def validate_recipe(data):
+    """[summary]
 
     Args:
-        recipe (dict): dict representation of a recipe
-
-    Returns:
-        Tuple[str]: list of errors
-    """
-    return (
-        *validate_required_fields(recipe, constants.REQUIRED_RECIPE_FIELDS),
-        *validate_recipe_steps(recipe.get("steps", ())),
-        *validate_recipe_ingredients(recipe.get("ingredients", ())),
-        *validate_tags(recipe.get("tags", ())),
-    )
-
-
-def validate_recipe_steps(steps: Iterable[dict]) -> Tuple[str]:
-    """Validates provided steps.
-    returns list of errors or empty list if no errors.
-    steps should be as exampled below
-    [
-        {
-            'order': int,
-            'instruction': str,
-        }
-    ]
-
-    Args:
-        steps (Iterable[dict]): steps in recipe
-
-    Returns:
-        Tuple[str]: list of errors
-    """
-    errors = ()
-
-    try:
-        if all(isinstance(step, dict) for step in steps):
-            if any("instruction" not in step for step in steps):
-                errors = ("instruction is a required field for step.",)
-        else:
-            raise TypeError
-
-    except TypeError:
-        errors = ("steps must be a list of steps",)
-
-    return errors
-
-
-def validate_recipe_ingredients(ingredients: Iterable[dict]) -> Tuple[str]:
-    """validates provided ingredients
-    returns list of errors or empty list if no errors.
-    ingredients should be as exampled below
-    [
-        {
-            amount: decimal,
-            unit: str,
-            specifier: str,
-            ingredient_id: (int, str)
-        }
-    ]
-
-    Args:
-        ingredients (Iterable[dict]): ingredients in recipe
-
-    Returns:
-        Tuple[str]: list of errors
+        data ([type]): [description]
     """
 
-    try:
-        if all(isinstance(ingredient, dict) for ingredient in ingredients):
-            errors = tuple(
-                {
-                    err_msg
-                    for ingredient in ingredients
-                    for err_msg in validate_required_fields(
-                        ingredient, constants.REQUIRED_INGREDIENT_IN_RECIPE_FIELDS
-                    )
-                }
-            )
-        else:
-            raise TypeError
+    def add_errors_to_dict(errors, key, invalid_serializers):
+        for index, serializer in invalid_serializers:
+            errors[key][index] = serialize_errors(serializer.errors)
 
-    except TypeError:
-        errors = (
-            "ingredients in a Recipe must be a list of objects with "
-            "ingredient_id, amount, unit, and specifier.",
+    def get_invalid_serializers_with_index(serializers_sequence):
+        return tuple(
+            (str(index), serializer)
+            for index, serializer in enumerate(serializers_sequence)
+            if not serializer.is_valid()
         )
 
-    return errors
+    errors = {}
 
-
-def validate_tags(tags: Iterable[Union[str, int]]) -> Tuple[str]:
-    """validates provided tag IDs
-    returns list of errors or empty list if no errors.
-    ingredients should be as exampled below
-
-    Args:
-        tags (Iterable[Union[str, int]]): list of IDs
-
-    Returns:
-        Tuple[str]: list of errors
-    """
-    errors = ()
     try:
-        if any(not isinstance(tag_id, (str, int)) for tag_id in tags):
-            errors = ("tag ID must be either a string or an integer",)
+        ingredient_in_recipe_serializers = tuple(
+            serializers.IngredientInRecipeSerializer(data=ingredient)
+            for ingredient in data.pop("ingredients", ())
+        )
 
     except TypeError:
-        errors = ("tags must be a list of tag IDs",)
+        errors["ingredients"] = {
+            "non_field_errors": [
+                "ingredients must be an Array of RecipeInIngredient objects"
+            ]
+        }
 
-    return errors
+    try:
+        step_serializers = tuple(
+            serializers.StepSerializer(
+                data={"order": index, "instruction": instruction}
+            )
+            for index, instruction in enumerate(data.pop("steps", ()), 1)
+        )
+
+    except TypeError:
+        errors["steps"] = {"non_field_errors": ["steps must be an Array of Strings"]}
+
+    try:
+        tag_ids = tuple(tag_id for tag_id in data.pop("tags", ()))
+
+    except TypeError:
+        errors["tags"] = {"non_field_errors": ["tags must be an Array of Tag IDs"]}
+
+    recipe_serializer = serializers.RecipeSerializer(data=data)
+
+    if not recipe_serializer.is_valid():
+        errors.update(serialize_errors(recipe_serializer.errors))
+
+    if any(field in errors for field in ("ingredients", "steps", "tags")):
+        return errors, {"recipe": recipe_serializer}
+
+    if invalid_serializers := get_invalid_serializers_with_index(
+        ingredient_in_recipe_serializers
+    ):
+        errors["ingredients"] = {}
+        add_errors_to_dict(errors, "ingredients", invalid_serializers)
+
+    if invalid_serializers := get_invalid_serializers_with_index(step_serializers):
+        errors["steps"] = {}
+        add_errors_to_dict(errors, "steps", invalid_serializers)
+
+    return (
+        errors,
+        {
+            "recipe": recipe_serializer,
+            "ingredients": ingredient_in_recipe_serializers,
+            "steps": step_serializers,
+            "tag_ids": tag_ids,
+        },
+    )
 
 
 def create_recipe(recipe: dict, author_id: Union[int, str]) -> models.Recipe:
