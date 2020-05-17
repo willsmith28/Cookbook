@@ -108,14 +108,13 @@ class StepSerializer(serializers.Serializer):
 
     id = serializers.IntegerField(read_only=True)
     instruction = serializers.CharField()
-    order = serializers.IntegerField(min_value=1)
+    order = serializers.IntegerField(min_value=1, required=False)
     recipe_id = serializers.IntegerField(required=False)
 
     def create(self, validated_data):
         return models.Step.objects.create(**validated_data)
 
     def update(self, instance, validated_data):
-        instance.order = validated_data.get("order", instance.order)
         instance.instruction = validated_data.get("instruction", instance.instruction)
         instance.save()
 
