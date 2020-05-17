@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework import status
+from ..serializers import TagSerializer
 from .. import models, utils, constants
 
 
@@ -41,7 +42,7 @@ class RecipeTag(APIView):
 
         else:
             response = Response(
-                tuple(tag.to_json() for tag in recipe.tags.all()),
+                tuple(TagSerializer(tag).data for tag in recipe.tags.all()),
                 status=status.HTTP_200_OK,
             )
 
@@ -75,7 +76,8 @@ class RecipeTag(APIView):
 
         except KeyError:
             return Response(
-                {"message": "id field is required"}, status=status.HTTP_400_BAD_REQUEST,
+                {"errors": {"id": ["This field is required"]}},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         if not utils.user_owns_item(
@@ -85,7 +87,7 @@ class RecipeTag(APIView):
 
         recipe.tags.add(tag)
 
-        return Response(tag.to_json(), status=status.HTTP_201_CREATED)
+        return Response(TagSerializer(tag).data, status=status.HTTP_201_CREATED)
 
 
 class RecipeTagDelete(APIView):
@@ -109,11 +111,13 @@ class RecipeTagDelete(APIView):
         try:
             recipe = models.Recipe.objects.prefetch_related("tags").get(id=recipe_pk)
             tag = models.Tag.objects.get(id=tag_pk)
+
         except models.Recipe.DoesNotExist:
             return Response(
                 {"message": "Recipe with that id was not found"},
                 status=status.HTTP_404_NOT_FOUND,
             )
+
         except models.Tag.DoesNotExist:
             return Response(
                 {"message": "Tag with that id was not found"},
