@@ -37,17 +37,6 @@ class TagSerializer(serializers.Serializer):
     value = serializers.CharField(max_length=256)
     kind = serializers.ChoiceField(models.Tag.KIND)
 
-    def validate_kind(self, value):
-        """[summary]
-
-        Args:
-            value ([type]): [description]
-        """
-        if value not in (kind for kind, _ in models.Tag.KIND):
-            raise serializers.ValidationError("Invalid Tag Kind")
-
-        return value
-
     def create(self, validated_data):
         return models.Tag.objects.create(**validated_data)
 
