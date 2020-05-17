@@ -659,7 +659,7 @@ class RecipeStepsCase(TestCase):
 
     def test_edit_step(self):
         """
-        PUT /recipe/<int:recipe_pk>/steps/<int:step_pk>/
+        PUT /recipe/<int:recipe_pk>/steps/<int:order>/
         """
         token = get_token()
         test_step = {"instruction": "new"}
@@ -667,7 +667,7 @@ class RecipeStepsCase(TestCase):
         response = self.client.put(
             reverse(
                 "recipe-step-detail",
-                kwargs={"recipe_pk": self.recipe1.id, "step_pk": db_step.id},
+                kwargs={"recipe_pk": self.recipe1.id, "order": db_step.order},
             ),
             test_step,
             content_type="application/json",
@@ -678,14 +678,14 @@ class RecipeStepsCase(TestCase):
 
     def test_delete_not_last_step(self):
         """
-        DELETE /recipe/<int:recipe_pk>/steps/<int:step_pk>/
+        DELETE /recipe/<int:recipe_pk>/steps/<int:order>/
         """
         token = get_token()
         db_step = self.recipe1.steps.all().first()
         response = self.client.delete(
             reverse(
                 "recipe-step-detail",
-                kwargs={"recipe_pk": self.recipe1.id, "step_pk": db_step.id},
+                kwargs={"recipe_pk": self.recipe1.id, "order": db_step.order},
             ),
             content_type="application/json",
             HTTP_AUTHORIZATION=f"Token {token}",
@@ -694,14 +694,14 @@ class RecipeStepsCase(TestCase):
 
     def test_delete_last_step(self):
         """
-        DELETE /recipe/<int:recipe_pk>/steps/<int:step_pk>/
+        DELETE /recipe/<int:recipe_pk>/steps/<int:order>/
         """
         token = get_token()
         db_step = self.recipe1.steps.all().last()
         response = self.client.delete(
             reverse(
                 "recipe-step-detail",
-                kwargs={"recipe_pk": self.recipe1.id, "step_pk": db_step.id},
+                kwargs={"recipe_pk": self.recipe1.id, "order": db_step.order},
             ),
             content_type="application/json",
             HTTP_AUTHORIZATION=f"Token {token}",

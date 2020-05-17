@@ -94,7 +94,7 @@ class RecipeStep(APIView):
 
 class RecipeStepDetail(APIView):
     """
-    [GET, PUT, DELETE] /recipe/<int:recipe_pk>/steps/<int:step_pk>/
+    [GET, PUT, DELETE] /recipe/<int:recipe_pk>/steps/<int:order>/
     {
         id: int,
         order: int,
@@ -105,7 +105,7 @@ class RecipeStepDetail(APIView):
 
     permission_classes = (IsAuthenticatedOrReadOnly,)
 
-    def get(self, request, recipe_pk, step_pk):
+    def get(self, request, recipe_pk, order):
         """get step detail
 
         Args:
@@ -117,14 +117,10 @@ class RecipeStepDetail(APIView):
             Response: DRF response
         """
         try:
-            models.Recipe.objects.values("id").get(id=recipe_pk)
-            step = models.Step.objects.get(id=step_pk)
+            step = models.Step.objects.get(recipe_id=recipe_pk, order=order)
 
         except models.Recipe.DoesNotExist:
-            response = Response(
-                {"message": "Recipe with that id not found"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            response = Response(status=status.HTTP_404_NOT_FOUND,)
 
         except models.Step.DoesNotExist:
             response = Response(
@@ -137,7 +133,7 @@ class RecipeStepDetail(APIView):
 
         return response
 
-    def put(self, request, recipe_pk, step_pk):
+    def put(self, request, recipe_pk, order):
         """edit a step
 
         Args:
@@ -150,7 +146,7 @@ class RecipeStepDetail(APIView):
         """
         try:
             recipe = models.Recipe.objects.values("author_id").get(id=recipe_pk)
-            step = models.Step.objects.get(id=step_pk)
+            step = models.Step.objects.get(recipe_id=recipe_pk, order=order)
 
         except models.Recipe.DoesNotExist:
             return Response(
@@ -179,7 +175,7 @@ class RecipeStepDetail(APIView):
 
         return response
 
-    def delete(self, request, recipe_pk, step_pk):
+    def delete(self, request, recipe_pk, order):
         """Delete Step
 
         Args:
@@ -192,7 +188,7 @@ class RecipeStepDetail(APIView):
         """
         try:
             recipe = models.Recipe.objects.get(id=recipe_pk)
-            step = models.Step.objects.get(id=step_pk)
+            step = models.Step.objects.get(recipe_id=recipe_pk, order=order)
 
         except models.Recipe.DoesNotExist:
             return Response(

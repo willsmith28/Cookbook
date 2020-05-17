@@ -30,7 +30,7 @@ urlpatterns = [
         "recipe/<int:recipe_pk>/steps/", views.RecipeStep.as_view(), name="recipe-steps"
     ),
     path(
-        "recipe/<int:recipe_pk>/steps/<int:step_pk>/",
+        "recipe/<int:recipe_pk>/steps/<int:order>/",
         views.RecipeStepDetail.as_view(),
         name="recipe-step-detail",
     ),
