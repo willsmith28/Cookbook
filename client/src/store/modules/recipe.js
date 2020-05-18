@@ -373,9 +373,14 @@ const getters = {
   },
 
   findIngredientByName: state => name => {
-    return Object.values(state.ingredients).find(
+    const ingredient = Object.values(state.ingredients).find(
       ingredient => ingredient.name === name
     );
+    if (ingredient) {
+      return ingredient;
+    } else {
+      return null;
+    }
   },
 
   ingredients: state => Object.values(state.ingredients),
@@ -431,13 +436,11 @@ const getters = {
 
   recipeCount: state => Object.keys(state.recipes).length,
 
-  getIngredientInRecipe: state => (ingredient_id, recipe_id) => {
+  getIngredientsInRecipe: state => recipe_id => {
     const {
-      ingredientsInRecipe: {
-        [`${recipe_id}`]: { [`${ingredient_id}`]: ingredientInRecipe }
-      }
+      ingredientsInRecipe: { [`${recipe_id}`]: ingredient }
     } = state;
-    return ingredientInRecipe;
+    return Object.values(ingredient);
   },
 
   ingredientInRecipeCount: state => recipe_id => {
