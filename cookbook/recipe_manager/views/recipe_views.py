@@ -164,10 +164,7 @@ class RecipeDetailView(APIView):
             ).get(id=pk)
 
         except models.Recipe.DoesNotExist:
-            response = Response(
-                {"message": "No Recipe was found with that ID"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            response = Response(status=status.HTTP_404_NOT_FOUND,)
 
         else:
             response = Response(
@@ -192,10 +189,7 @@ class RecipeDetailView(APIView):
             ).get(id=pk)
 
         except models.Recipe.DoesNotExist:
-            return Response(
-                {"message": "No Recipe was found with that ID"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            return Response(status=status.HTTP_404_NOT_FOUND,)
 
         if not utils.user_owns_item(
             recipe.author_id, request.user.id, request.user.is_superuser

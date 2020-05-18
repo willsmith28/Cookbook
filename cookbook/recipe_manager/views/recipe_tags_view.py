@@ -35,10 +35,7 @@ class RecipeTag(APIView):
             recipe = models.Recipe.objects.prefetch_related("tags").get(id=recipe_pk)
 
         except models.Recipe.DoesNotExist:
-            response = Response(
-                {"message": "Recipe with that id not found"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            response = Response(status=status.HTTP_404_NOT_FOUND,)
 
         else:
             response = Response(
@@ -63,10 +60,7 @@ class RecipeTag(APIView):
             tag = models.Tag.objects.get(id=request.data["id"])
 
         except models.Recipe.DoesNotExist:
-            return Response(
-                {"message": "Recipe with that id was not found"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            return Response(status=status.HTTP_404_NOT_FOUND,)
 
         except models.Tag.DoesNotExist:
             return Response(
@@ -113,16 +107,10 @@ class RecipeTagDelete(APIView):
             tag = models.Tag.objects.get(id=tag_pk)
 
         except models.Recipe.DoesNotExist:
-            return Response(
-                {"message": "Recipe with that id was not found"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            return Response(status=status.HTTP_404_NOT_FOUND,)
 
         except models.Tag.DoesNotExist:
-            return Response(
-                {"message": "Tag with that id was not found"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            return Response(status=status.HTTP_404_NOT_FOUND,)
 
         if not utils.user_owns_item(
             recipe.author_id, request.user.id, request.user.is_superuser

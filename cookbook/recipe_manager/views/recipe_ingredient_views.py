@@ -37,9 +37,7 @@ class RecipeIngredient(APIView):
             recipe = models.Recipe.objects.get(id=recipe_pk)
 
         except models.Recipe.DoesNotExist:
-            response = Response(
-                {"message": "Recipe was not found"}, status=status.HTTP_404_NOT_FOUND
-            )
+            response = Response(status=status.HTTP_404_NOT_FOUND)
 
         else:
             response = Response(
@@ -69,10 +67,7 @@ class RecipeIngredient(APIView):
             recipe = models.Recipe.objects.get(id=recipe_pk)
 
         except models.Recipe.DoesNotExist:
-            return Response(
-                {"errors": {"non_field_errors": ["No Recipe was found with that ID"]}},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            return Response(status=status.HTTP_404_NOT_FOUND,)
 
         if not utils.user_owns_item(
             recipe.author_id, request.user.id, request.user.is_superuser
@@ -147,10 +142,7 @@ class RecipeIngredientDetail(APIView):
             )
 
         except models.IngredientInRecipe.DoesNotExist:
-            response = Response(
-                {"message": "Ingredient on that recipe was not found"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            response = Response(status=status.HTTP_404_NOT_FOUND,)
         else:
             response = Response(
                 IngredientInRecipeSerializer(ingredient_in_recipe).data,
@@ -177,10 +169,7 @@ class RecipeIngredientDetail(APIView):
             ).get(ingredient_id=ingredient_pk, recipe_id=recipe_pk)
 
         except models.IngredientInRecipe.DoesNotExist:
-            return Response(
-                {"message": "Ingredient on that recipe was not found"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            return Response(status=status.HTTP_404_NOT_FOUND,)
 
         if not utils.user_owns_item(
             ingredient_in_recipe.recipe.author_id,

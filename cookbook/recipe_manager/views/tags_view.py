@@ -85,10 +85,7 @@ class TagDetailView(APIView):
             tag = models.Tag.objects.get(id=pk)
 
         except models.Tag.DoesNotExist:
-            response = Response(
-                {"message": "Tag with that id was not found"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            response = Response(status=status.HTTP_404_NOT_FOUND,)
 
         else:
             response = Response(TagSerializer(tag).data, status=status.HTTP_200_OK)

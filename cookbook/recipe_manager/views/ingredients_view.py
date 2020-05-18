@@ -92,10 +92,7 @@ class IngredientDetailView(APIView):
             ingredient = models.Ingredient.objects.get(id=pk)
 
         except models.Ingredient.DoesNotExist:
-            response = Response(
-                {"message": "No ingredient found with that ID"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            response = Response(status=status.HTTP_404_NOT_FOUND,)
 
         else:
             response = Response(
