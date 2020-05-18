@@ -6,7 +6,9 @@ const state = {
   steps: {},
   ingredientsInRecipe: {},
   ingredients: {},
-  tags: {}
+  ingredientUnits: [],
+  tags: {},
+  tagKinds: []
 };
 
 // const state = {
@@ -19,16 +21,14 @@ const state = {
 //       cook_time: "",
 //       created_on: "",
 //       last_updated_on: "",
-//       steps: [1],
-//       ingredients: [1],
 //       tags: [1],
 //     },
 //   },
-//   steps: { '1': { id: 1, instruction: "", order: 1, recipe_id: 1 } },
+//   ingredients: { "1": { name: "", recipe_id: null } },
 //   ingredientsInRecipe: {
-//     "1 1": { amount: "", unit: "", specifier: "", ingredient_id: 1 },
+//     "1": {"1": { amount: "", unit: "", specifier: "", ingredient_id: 1 }},
 //   },
-//   ingredients: { '1': { name: "", recipe_id: null } },
+//   steps: {"1": ["do thing",]}
 //   tags: { '1': { value: "" } },
 // };
 
@@ -45,6 +45,9 @@ const mutations = {
     // GET /ingredient/pk/ or POST /ingredient/
     Vue.set(state.ingredients, `${ingredient.id}`, ingredient);
   },
+  ADD_INGREDIENT_UNITS(state, units) {
+    state.ingredientUnits = units;
+  },
   ADD_TAGS_FROM_LIST(state, tagsList) {
     // GET /tags/
     const tags = {};
@@ -57,55 +60,44 @@ const mutations = {
     // GET /tag/pk/ or POST /tag/
     Vue.set(state.tags, `${tag.id}`, tag);
   },
-  ADD_RECIPES_FROM_LIST(state, recipesList) {
-    // GET /recipe/
-    const recipes = {};
-    for (const recipe of recipesList) {
-      recipes[`${recipe.id}`] = recipe;
-    }
-    state.recipes = recipes;
-  },
   ADD_RECIPE(state, recipe) {
-    // GET,PUT /recipe/pk/ or POST /recipe/
+    // GET,PUT /recipe/pk/ or GET, POST /recipe/
     Vue.set(state.recipes, `${recipe.id}`, recipe);
   },
-  ADD_INGREDIENTS_IN_RECIPE_FROM_LIST(state, ingredientInRecipeList) {
-    // GET /recipe/pk/ingredients/
-    for (const ingredientInRecipe of ingredientInRecipeList) {
-      Vue.set(
-        state.ingredientsInRecipe,
-        `${ingredientInRecipe.ingredient_id} ${ingredientInRecipe.recipe_id}`,
-        ingredientInRecipe
-      );
-    }
-  },
-  ADD_INGREDIENT_IN_RECIPE(state, ingredientInRecipe) {
-    // POST /recipe/pk/ingredients/ or GET,PUT /recipe/pk/ingredients/pk/
+  ADD_INGREDIENTS_IN_RECIPE(state, { recipe_id, ingredientsInRecipe }) {
     Vue.set(
       state.ingredientsInRecipe,
-      `${ingredientInRecipe.ingredient_id} ${ingredientInRecipe.recipe_id}`,
+      `${recipe_id}`,
+      Object.assign(
+        {},
+        ...ingredientsInRecipe.map(item => ({ [item.ingredient_id]: item }))
+      )
+    );
+  },
+  ADD_INGREDIENT_IN_RECIPE(state, ingredientInRecipe) {
+    // GET, POST /recipe/pk/ingredients/ or GET,PUT /recipe/pk/ingredients/pk/
+    const recipeID = `${ingredientInRecipe.recipe_id}`;
+    if (
+      !Object.prototype.hasOwnProperty.call(state.ingredientsInRecipe, recipeID)
+    ) {
+      Vue.set(state.ingredientsInRecipe, recipeID, {});
+    }
+
+    Vue.set(
+      state.ingredientsInRecipe[recipeID],
+      `${ingredientInRecipe.ingredient_id}`,
       ingredientInRecipe
     );
   },
-  ADD_INGREDIENT_TO_RECIPE(state, ingredientInRecipe) {
-    // POST /recipe/pk/ingredients/
-    const {
-      recipes: { [ingredientInRecipe.recipe_id]: recipe }
-    } = state;
-
-    recipe.ingredients.push(ingredientInRecipe.ingredient_id);
-  },
-  REMOVE_INGREDIENT_FROM_RECIPE(state, { ingredient_id, recipe_id }) {
+  REMOVE_INGREDIENT_FROM_RECIPE(
+    { ingredientsInRecipe },
+    { ingredient_id, recipe_id }
+  ) {
     // DELETE /recipe/pk/ingredients/pk/
-    const {
-      recipes: { [recipe_id]: recipe }
-    } = state;
-
-    recipe.ingredients.splice(recipe.ingredients.indexOf(ingredient_id), 1);
-  },
-  DELETE_INGREDIENT_IN_RECIPE(state, { ingredient_id, recipe_id }) {
-    // DELETE /recipe/pk/ingredients/pk/
-    Vue.delete(state.ingredientsInRecipe, `${ingredient_id} ${recipe_id}`);
+    const recipeID = `${recipe_id}`;
+    if (Object.prototype.hasOwnProperty.call(ingredientsInRecipe, recipeID)) {
+      Vue.delete(ingredientsInRecipe[recipeID], `${ingredient_id}`);
+    }
   },
   ADD_TAG_TO_RECIPE(state, { tag_id, recipe_id }) {
     // POST /recipe/pk/tags/pk/
@@ -118,44 +110,49 @@ const mutations = {
   REMOVE_TAG_FROM_RECIPE(state, { tag_id, recipe_id }) {
     // DELETE /recipe/pk/tags/pk/
     const {
-      recipes: { [recipe_id]: recipe }
+      recipes: { [`${recipe_id}`]: recipe }
     } = state;
 
     recipe.tags.splice(recipe.tags.indexOf(tag_id), 1);
   },
-  ADD_STEPS_FROM_LIST(state, steps) {
+  ADD_STEPS_TO_RECIPE(state, { recipe_id, steps }) {
     // GET /recipe/pk/steps/
-    for (const step of steps) {
-      Vue.set(state.steps, `${step.id}`, step);
+    Vue.set(state.steps, `${recipe_id}`, steps);
+  },
+  ADD_STEP_TO_RECIPE(state, { recipe_id, instruction }) {
+    // GET, PUT /recipe/pk/steps/order/ or POST /recipe/pk/steps/
+    const recipeID = `${recipe_id}`;
+    if (!Object.prototype.hasOwnProperty.call(state.steps, recipeID)) {
+      Vue.set(state.steps, recipeID, []);
     }
+    state.steps[recipeID].push(instruction);
   },
-  ADD_STEP(state, step) {
-    // GET, PUT /recipe/pk/steps/pk/ or POST /recipe/pk/steps/
-    Vue.set(state.steps, `${step.id}`, step);
+  EDIT_STEP(state, { recipe_id, order, instruction }) {
+    state.steps[`${recipe_id}`].splice(order - 1, 1, instruction);
   },
-  ADD_STEP_TO_RECIPE(state, { step_id, recipe_id }) {
-    // POST /recipe/pk/steps/
+  REMOVE_LAST_STEP_FROM_RECIPE(state, recipe_id) {
+    // DELETE /recipe/pk/steps/order/
     const {
       recipes: { [recipe_id]: recipe }
     } = state;
 
-    recipe.steps.push(step_id);
-  },
-  REMOVE_STEP_FROM_RECIPE(state, { step_id, recipe_id }) {
-    // DELETE /recipe/pk/steps/id/
-    const {
-      recipes: { [recipe_id]: recipe }
-    } = state;
-
-    recipe.steps.splice(recipe.steps.indexOf(step_id));
-  },
-  REMOVE_STEP(state, step_id) {
-    // DELETE /recipe/pk/steps/id/
-    Vue.delete(state.steps, `${step_id}`);
+    recipe.steps.pop();
   }
 };
 
 const actions = {
+  async initState({ dispatch }) {
+    try {
+      await Promise.all([
+        dispatch("fetchAllIngredients"),
+        dispatch("fetchIngredientUnits"),
+        dispatch("fetchAllTags"),
+        dispatch("fetchAllRecipes")
+      ]);
+    } catch (error) {
+      handleError(error);
+    }
+  },
   async fetchAllIngredients({ commit }) {
     // GET /ingredient/
     try {
@@ -172,6 +169,14 @@ const actions = {
       commit("ADD_INGREDIENT", createdIngredient);
     } catch (error) {
       // TODO handle 400 and 409
+      handleError(error);
+    }
+  },
+  async fetchIngredientUnits({ commit }) {
+    try {
+      const { data: units } = await requests.getIngredientUnits();
+      commit("ADD_INGREDIENT_UNITS", units);
+    } catch (error) {
       handleError(error);
     }
   },
@@ -194,64 +199,49 @@ const actions = {
       handleError(error);
     }
   },
-  async fetchAllRecipes({ commit }) {
+  async addRecipeToState({ commit }, { ingredients, steps, ...recipe }) {
+    commit("ADD_RECIPE", recipe);
+    commit("ADD_STEPS_TO_RECIPE", { recipe_id: recipe.id, steps });
+    commit("ADD_INGREDIENTS_IN_RECIPE", {
+      recipe_id: recipe.id,
+      ingredientsInRecipe: ingredients
+    });
+  },
+  async fetchAllRecipes({ dispatch }) {
     // GET /recipe/
     try {
       const { data: recipes } = await requests.getAllRecipes();
-      commit("ADD_RECIPES_FROM_LIST", recipes);
+      for (const recipe of recipes) {
+        await dispatch("addRecipeToState", recipe);
+      }
     } catch (error) {
       handleError(error);
     }
   },
-  async createRecipe({ commit, dispatch }, recipe) {
+  async createRecipe({ dispatch }, recipe) {
     // POST /recipe/
     try {
       const { data: createdRecipe } = await requests.createRecipe(recipe);
-      const dispatchMethods = [];
-      if (recipe.steps.length || recipe.ingredients.length) {
-        if (recipe.steps.length) {
-          dispatchMethods.push("fetchStepsInRecipe");
-        }
-        if (recipe.ingredients.length) {
-          dispatchMethods.push("fetchIngredientsInRecipe");
-        }
-        await Promise.all(
-          dispatchMethods.map(method => dispatch(method, createdRecipe.id))
-        );
-      }
-      commit("ADD_RECIPE", createdRecipe);
+      await dispatch("addRecipeToState", createdRecipe);
     } catch (error) {
       // TODO handle 400
       handleError(error);
     }
   },
-  async fetchRecipeDetail({ commit, dispatch }, recipe_id) {
+  async fetchRecipeDetail({ dispatch }, recipe_id) {
     // GET /recipe/pk/
     try {
       const { data: recipe } = await requests.getRecipe(recipe_id);
-      const dispatchMethods = [];
-      if (recipe.steps.length || recipe.ingredients.length) {
-        if (recipe.steps.length) {
-          dispatchMethods.push("fetchStepsInRecipe");
-        }
-        if (recipe.ingredients.length) {
-          dispatchMethods.push("fetchIngredientsInRecipe");
-        }
-        await Promise.all(
-          dispatchMethods.map(method => dispatch(method, recipe_id))
-        );
-      }
-      commit("ADD_RECIPE", recipe);
+      await dispatch("addRecipeToState", recipe);
     } catch (error) {
       handleError(error);
     }
   },
-
-  async editRecipe({ commit }, recipe) {
+  async editRecipe({ dispatch }, recipe) {
     // PUT /recipe/pk/
     try {
       const { data: changedRecipe } = await requests.editRecipe(recipe);
-      commit("ADD_RECIPE", changedRecipe);
+      await dispatch("addRecipeToState", changedRecipe);
     } catch (error) {
       handleError(error);
     }
@@ -260,9 +250,9 @@ const actions = {
     // GET /recipe/pk/ingredients/
     try {
       const {
-        data: ingredientInRecipeList
+        data: ingredientsInRecipe
       } = await requests.getAllIngredientsInRecipe(recipe_id);
-      commit("ADD_INGREDIENTS_IN_RECIPE_FROM_LIST", ingredientInRecipeList);
+      commit("ADD_INGREDIENTS_IN_RECIPE", { recipe_id, ingredientsInRecipe });
     } catch (error) {
       handleError(error);
     }
@@ -274,7 +264,6 @@ const actions = {
         recipe_id,
         ingredient
       );
-      commit("ADD_INGREDIENT_IN_RECIPE", ingredientInRecipe);
       commit("ADD_INGREDIENT_TO_RECIPE", ingredientInRecipe);
     } catch (error) {
       handleError(error);
@@ -297,7 +286,6 @@ const actions = {
     try {
       await requests.removeIngredientFromRecipe(recipe_id, ingredient_id);
       commit("REMOVE_INGREDIENT_FROM_RECIPE", { ingredient_id, recipe_id });
-      commit("DELETE_INGREDIENT_IN_RECIPE", { ingredient_id, recipe_id });
     } catch (error) {
       handleError(error);
     }
@@ -324,7 +312,7 @@ const actions = {
     // GET /recipe/pk/steps/
     try {
       const { data: steps } = await requests.getAllStepsInRecipe(recipe_id);
-      commit("ADD_STEPS_FROM_LIST", steps);
+      commit("ADD_STEPS_TO_RECIPE", { recipe_id, steps });
     } catch (error) {
       handleError(error);
     }
@@ -332,12 +320,10 @@ const actions = {
   async addStepToRecipe({ commit }, { recipe_id, step }) {
     // POST /recipe/pk/steps/
     try {
-      const { data: createdStep } = await requests.addStepToRecipe(
-        recipe_id,
-        step
-      );
-      commit("ADD_STEP", createdStep);
-      commit("ADD_STEP_TO_RECIPE", { step_id: createdStep.id, recipe_id });
+      const {
+        data: { instruction }
+      } = await requests.addStepToRecipe(recipe_id, step);
+      commit("ADD_STEP_TO_RECIPE", { recipe_id, instruction });
     } catch (error) {
       handleError(error);
     }
@@ -345,21 +331,22 @@ const actions = {
   async editStepInRecipe({ commit }, { recipe_id, step }) {
     // PUT /recipe/pk/steps/pk/
     try {
-      const { data: changedStep } = await requests.editStepInRecipe(
-        recipe_id,
-        step
-      );
-      commit("ADD_STEP", changedStep);
+      const {
+        data: { order, instruction }
+      } = await requests.editStepInRecipe(recipe_id, step);
+      commit("EDIT_STEP", { recipe_id, order, instruction });
     } catch (error) {
       handleError(error);
     }
   },
-  async removeStepFromRecipe({ commit }, { recipe_id, step_id }) {
+  async removeLastStepFromRecipe({ commit, state }, { recipe_id }) {
     // DELETE /recipe/pk/steps/pk/
     try {
-      await requests.removeStepFromRecipe(recipe_id, step_id);
-      commit("REMOVE_STEP", { step_id, recipe_id });
-      commit("REMOVE_STEP_FROM_RECIPE", { step_id, recipe_id });
+      const {
+        steps: { [recipe_id]: steps }
+      } = state;
+      await requests.removeStepFromRecipe(recipe_id, steps.length);
+      commit("REMOVE_LAST_STEP_FROM_RECIPE", recipe_id);
     } catch (error) {
       handleError(error);
     }
@@ -374,9 +361,31 @@ const getters = {
     return ingredient;
   },
 
-  ingredientCount(state) {
-    return Object.keys(state.ingredients).length;
+  getIngredientByName: state => name => {
+    return Object.values(state.ingredients).find(
+      ingredient => ingredient.name === name
+    );
   },
+
+  ingredients: state => Object.values(state.ingredients),
+
+  ingredientNames: state =>
+    Object.values(state.ingredients).map(ingredient => ingredient.name),
+
+  ingredientUnits(state) {
+    const units = new Map();
+    for (const [groupName, group] of state.ingredientUnits) {
+      units.set(groupName, []);
+
+      // eslint-disable-next-line no-unused-vars
+      for (const [itemAbbreviation, itemName] of group.entries()) {
+        units.get(groupName).push(itemAbbreviation);
+      }
+    }
+    return units;
+  },
+
+  ingredientCount: state => Object.keys(state.ingredients).length,
 
   getTag: state => id => {
     const {
@@ -385,13 +394,11 @@ const getters = {
     return tag;
   },
 
-  tagCount(state) {
-    return Object.keys(state.tags).length;
-  },
+  tags: state => Object.values(state.tags),
 
-  allRecipes(state) {
-    return Object.values(state.recipes);
-  },
+  tagCount: state => Object.keys(state.tags).length,
+
+  recipes: state => Object.values(state.recipes),
 
   getRecipe: state => id => {
     const {
@@ -400,30 +407,29 @@ const getters = {
     return recipe;
   },
 
-  recipeCount(state) {
-    return Object.keys(state.recipes).length;
-  },
+  recipeCount: state => Object.keys(state.recipes).length,
 
   getIngredientInRecipe: state => (ingredient_id, recipe_id) => {
-    const key = `${ingredient_id} ${recipe_id}`;
     const {
-      ingredientsInRecipe: { [key]: ingredientInRecipe }
+      ingredientsInRecipe: {
+        [recipe_id]: { [ingredient_id]: ingredientInRecipe }
+      }
     } = state;
     return ingredientInRecipe;
   },
 
-  ingredientInRecipeCount: state => id => {
+  ingredientInRecipeCount: state => recipe_id => {
     const {
-      recipes: { [id]: recipe }
+      ingredientsInRecipe: { [recipe_id]: ingredientsInRecipe }
     } = state;
-    return recipe.ingredients.length;
+    return Object.keys(ingredientsInRecipe).length;
   },
 
-  getStep: state => step_id => {
+  getSteps: state => recipe_id => {
     const {
-      steps: { [`${step_id}`]: step }
+      steps: { [`${recipe_id}`]: steps }
     } = state;
-    return step;
+    return [...steps];
   }
 };
 
