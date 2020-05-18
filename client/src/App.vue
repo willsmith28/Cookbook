@@ -66,21 +66,13 @@ export default {
       this.setUsername(username);
     }
 
-    Promise.all([
-      this.fetchAllIngredients(),
-      this.fetchAllTags(),
-      this.fetchAllRecipes()
-    ]);
+    Promise.resolve(this.initState());
   },
   methods: {
     toggleMenu() {
       this.menuVisible = !this.menuVisible;
     },
-    ...mapActions("recipe", [
-      "fetchAllIngredients",
-      "fetchAllTags",
-      "fetchAllRecipes"
-    ]),
+    ...mapActions("recipe", ["initState"]),
     ...mapActions("user", ["setUsername", "logout"])
   }
 };
