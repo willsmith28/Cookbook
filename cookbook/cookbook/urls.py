@@ -18,8 +18,8 @@ from django.urls import path, include
 from rest_framework.authtoken import views as auth_views
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
-    path("api-token-auth/", auth_views.obtain_auth_token),
-    path("recipe-manager/", include("recipe_manager.urls")),
-    path("user/", include("users.urls")),
+    path("api/admin/", admin.site.urls),
+    path("api/auth/", auth_views.obtain_auth_token),
+    path("api/recipe-manager/", include("recipe_manager.urls")),
+    path("api/user/", include("users.urls")),
 ]
