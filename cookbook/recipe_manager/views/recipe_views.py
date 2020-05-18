@@ -2,6 +2,7 @@
 Views for /recipe/ and /recipe/<pk>/
 """
 from django.db import transaction, IntegrityError
+from django.db.models import Prefetch
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
@@ -9,7 +10,6 @@ from rest_framework import status
 from ..serializers import (
     RecipeSerializer,
     IngredientInRecipeSerializer,
-    StepSerializer,
 )
 from .. import models, utils, constants
 
@@ -58,16 +58,14 @@ class RecipeView(APIView):
             Response: DRF Response
         """
 
-        def serialize_recipes_with_fk_ids(recipes):
+        def serialize_recipes_with_relations(recipes):
             for recipe in recipes:
-                yield _serialize_recipe_with_fk_ids(recipe)
+                yield _serialize_recipe_with_relations(recipe)
 
-        recipes = models.Recipe.objects.prefetch_related(
-            "ingredients", "steps", "tags"
-        ).all()
+        recipes = _query_recipe_with_relations().all()
 
         return Response(
-            tuple(serialize_recipes_with_fk_ids(recipes)), status=status.HTTP_200_OK,
+            tuple(serialize_recipes_with_relations(recipes)), status=status.HTTP_200_OK,
         )
 
     def post(self, request):
@@ -90,11 +88,11 @@ class RecipeView(APIView):
 
         try:
             with transaction.atomic():
-                recipe_instance = serializers["recipe"].save()
+                recipe = serializers["recipe"].save()
 
                 for serializer in serializers["ingredients"]:
                     ingredient = serializer.data
-                    recipe_instance.ingredients.add(
+                    recipe.ingredients.add(
                         models.Ingredient.objects.get(
                             id=ingredient.pop("ingredient_id")
                         ),
@@ -103,11 +101,11 @@ class RecipeView(APIView):
 
                 for serializer in serializers["steps"]:
                     step = serializer.data
-                    recipe_instance.steps.create(**step)
+                    recipe.steps.create(**step)
 
                 for tag_id in serializers["tag_ids"]:
                     try:
-                        recipe_instance.tags.add(models.Tag.objects.get(id=tag_id))
+                        recipe.tags.add(models.Tag.objects.get(id=tag_id))
 
                     except models.Tag.DoesNotExist:
                         pass
@@ -120,7 +118,7 @@ class RecipeView(APIView):
 
         else:
             response = Response(
-                _serialize_recipe_with_fk_ids(recipe_instance),
+                _serialize_recipe_with_relations(recipe),
                 status=status.HTTP_201_CREATED,
             )
 
@@ -155,16 +153,14 @@ class RecipeDetailView(APIView):
             Response: DRF Response
         """
         try:
-            recipe = models.Recipe.objects.prefetch_related(
-                "tags", "steps", "ingredients"
-            ).get(id=pk)
+            recipe = _query_recipe_with_relations().get(id=pk)
 
         except models.Recipe.DoesNotExist:
             response = Response(status=status.HTTP_404_NOT_FOUND,)
 
         else:
             response = Response(
-                _serialize_recipe_with_fk_ids(recipe), status=status.HTTP_200_OK,
+                _serialize_recipe_with_relations(recipe), status=status.HTTP_200_OK,
             )
 
         return response
@@ -180,9 +176,7 @@ class RecipeDetailView(APIView):
             Response: DRF Response
         """
         try:
-            recipe = models.Recipe.objects.prefetch_related(
-                "tags", "steps", "ingredients"
-            ).get(id=pk)
+            recipe = models.Recipe.objects.get(id=pk)
 
         except models.Recipe.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND,)
@@ -192,13 +186,13 @@ class RecipeDetailView(APIView):
         ):
             return constants.NOT_ALLOWED_RESPONSE
 
-        recipe_serializer = RecipeSerializer(
+        serializer = RecipeSerializer(
             recipe, data={**request.data, "author_id": request.user.id}
         )
 
-        if recipe_serializer.is_valid():
+        if serializer.is_valid():
             try:
-                recipe = recipe_serializer.save()
+                serializer.save()
 
             except IntegrityError as err:
                 return Response(
@@ -206,21 +200,29 @@ class RecipeDetailView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-        return Response(
-            _serialize_recipe_with_fk_ids(recipe), status=status.HTTP_200_OK
-        )
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-def _serialize_recipe_with_fk_ids(recipe: models.Recipe) -> dict:
+def _query_recipe_with_relations():
+    return models.Recipe.objects.prefetch_related(
+        "ingredients_in_recipe",
+        Prefetch("steps", queryset=models.Step.objects.only("instruction")),
+        Prefetch("tags", queryset=models.Tag.objects.only("id")),
+    )
+
+
+def _serialize_recipe_with_relations(recipe: models.Recipe) -> dict:
     serialized_recipe = RecipeSerializer(recipe).data
+    serialized_recipe["ingredients"] = tuple(
+        IngredientInRecipeSerializer(ingredient).data
+        for ingredient in recipe.ingredients_in_recipe.all()
+    )
+    serialized_recipe["steps"] = tuple(
+        instruction
+        for instruction in recipe.steps.values_list("instruction", flat=True).all()
+    )
     serialized_recipe["tags"] = tuple(
         int(tag_id) for tag_id in recipe.tags.values_list("id", flat=True).all()
     )
-    serialized_recipe["ingredients"] = tuple(
-        int(ingredient_id)
-        for ingredient_id in recipe.ingredients.values_list("id", flat=True).all()
-    )
-    serialized_recipe["steps"] = tuple(
-        int(step_id) for step_id in recipe.steps.values_list("id", flat=True).all()
-    )
+
     return serialized_recipe
