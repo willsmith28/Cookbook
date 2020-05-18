@@ -2,7 +2,7 @@ import client from "./client";
 
 const requests = {
   login(username, password) {
-    return client.post("/api-token-auth/", {
+    return client.post("/auth/", {
       username,
       password
     });
@@ -94,21 +94,19 @@ const requests = {
     return client.post(`/recipe-manager/recipe/${recipe_id}/steps/`, step);
   },
 
-  getStepInRecipe(recipe_id, step_id) {
-    return client.get(`/recipe-manager/recipe/${recipe_id}/steps/${step_id}/`);
+  getStepInRecipe(recipe_id, order) {
+    return client.get(`/recipe-manager/recipe/${recipe_id}/steps/${order}/`);
   },
 
   editStepInRecipe(recipe_id, step) {
     return client.put(
-      `/recipe-manager/recipe/${recipe_id}/steps/${step.id}/`,
+      `/recipe-manager/recipe/${recipe_id}/steps/${step.order}/`,
       step
     );
   },
 
-  removeStepFromRecipe(recipe_id, step_id) {
-    return client.delete(
-      `/recipe-manager/recipe/${recipe_id}/steps/${step_id}/`
-    );
+  removeStepFromRecipe(recipe_id, order) {
+    return client.delete(`/recipe-manager/recipe/${recipe_id}/steps/${order}/`);
   },
 
   getAllTagsInRecipe(recipe_id) {
