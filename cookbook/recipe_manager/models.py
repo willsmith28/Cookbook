@@ -146,7 +146,7 @@ class IngredientInRecipe(models.Model):
     specifier = models.CharField(max_length=256, blank=True)
 
     recipe = models.ForeignKey(
-        Recipe, on_delete=models.CASCADE, related_name="recipe_ingredients"
+        Recipe, on_delete=models.CASCADE, related_name="ingredients_in_recipe"
     )
     ingredient = models.ForeignKey(Ingredient, on_delete=models.PROTECT)
 

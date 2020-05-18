@@ -164,7 +164,7 @@ class Migration(migrations.Migration):
             name="recipe",
             field=models.ForeignKey(
                 on_delete=django.db.models.deletion.CASCADE,
-                related_name="recipe_ingredients",
+                related_name="ingredients_in_recipe",
                 to="recipe_manager.Recipe",
             ),
         ),
