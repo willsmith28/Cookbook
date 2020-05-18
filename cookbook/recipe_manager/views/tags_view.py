@@ -8,7 +8,7 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework import status
 from django.db import IntegrityError
 from ..serializers import TagSerializer
-from .. import models, utils, constants
+from .. import models, utils
 
 
 class TagView(APIView):
