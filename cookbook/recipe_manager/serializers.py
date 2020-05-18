@@ -135,7 +135,7 @@ class RecipeSerializer(serializers.Serializer):
     cook_time = serializers.CharField(max_length=128)
     created_on = serializers.DateTimeField(read_only=True)
     last_updated_on = serializers.DateTimeField(read_only=True)
-    author_id = serializers.IntegerField(allow_null=True)
+    author_id = serializers.IntegerField(allow_null=True, required=False)
 
     def create(self, validated_data):
         return models.Recipe.objects.create(**validated_data)

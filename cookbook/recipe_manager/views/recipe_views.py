@@ -27,13 +27,7 @@ class RecipeView(APIView):
         steps: [int,],
         ingredients: [int,]
         # POST only
-        steps: [
-            {
-                'order': int,
-                'instruction': str,
-                'recipe_id': int # does not need to be provided
-            }
-        ],
+        steps: [str,],
         ingredients: [
             {
                 amount: decimal,
@@ -134,8 +128,16 @@ class RecipeDetailView(APIView):
         servings: int,
         cook_time: str,
         # GET ONLY
-        ingredients: [int,],
-        steps: [int,],
+        ingredients: [
+             {
+                amount: decimal,
+                unit: str,
+                specifier: str,
+                recipe_id: int # does not need to be provided
+                ingredient_id: int
+            }
+        ],
+        steps: [str,],
         tags: [int,]
     }
     """
@@ -186,9 +188,10 @@ class RecipeDetailView(APIView):
         ):
             return constants.NOT_ALLOWED_RESPONSE
 
-        serializer = RecipeSerializer(
-            recipe, data={**request.data, "author_id": request.user.id}
-        )
+        data = {**request.data}
+        data.pop("author_id", None)
+
+        serializer = RecipeSerializer(recipe, data=data)
 
         if serializer.is_valid():
             try:
