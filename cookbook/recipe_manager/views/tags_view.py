@@ -41,13 +41,7 @@ class TagView(APIView):
 
         if not serializer.is_valid():
             return Response(
-                {
-                    "message": " ".join(
-                        f"{key}: {error}."
-                        for key, errors in serializer.errors.items()
-                        for error in errors
-                    )
-                },
+                {"errors": utils.serialize_errors(serializer.errors)},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -57,7 +51,8 @@ class TagView(APIView):
 
         except IntegrityError as err:
             response = Response(
-                {"message": str(err.__cause__)}, status=status.HTTP_400_BAD_REQUEST
+                {"errors": {"value": (str(err.__cause__),)}},
+                status=status.HTTP_409_CONFLICT,
             )
 
         return response

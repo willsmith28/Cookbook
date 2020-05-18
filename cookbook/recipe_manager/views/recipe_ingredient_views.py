@@ -75,9 +75,9 @@ class RecipeIngredient(APIView):
             return Response(
                 {
                     "errors": {
-                        "non_field_errors": [
-                            "Cannot add ingredients to a recipe that is not yours"
-                        ]
+                        "non_field_errors": (
+                            "You cannot add ingredients to a recipe that is not yours",
+                        )
                     }
                 },
                 status=status.HTTP_403_FORBIDDEN,
@@ -179,9 +179,9 @@ class RecipeIngredientDetail(APIView):
             return Response(
                 {
                     "errors": {
-                        "non_field_errors": [
-                            "Cannot edit ingredients in a recipe that is not yours"
-                        ]
+                        "non_field_errors": (
+                            "You cannot edit ingredients in a recipe that is not yours",
+                        )
                     }
                 },
                 status=status.HTTP_403_FORBIDDEN,
@@ -202,7 +202,8 @@ class RecipeIngredientDetail(APIView):
 
         except IntegrityError as err:
             response = Response(
-                {"message": str(err.__cause__)}, status=status.HTTP_409_CONFLICT
+                {"errors": {"non_field_errors": (str(err.__cause__),)}},
+                status=status.HTTP_409_CONFLICT,
             )
         else:
             response = Response(serializer.data, status=status.HTTP_200_OK,)

@@ -64,7 +64,8 @@ class IngredientView(APIView):
 
         except IntegrityError as err:
             response = Response(
-                {"message": str(err.__cause__)}, status=status.HTTP_400_BAD_REQUEST
+                {"errors": {"non_field_errors": (str(err.__cause__),)}},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         return response

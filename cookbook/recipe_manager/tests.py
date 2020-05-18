@@ -157,7 +157,7 @@ class TagTestCase(TestCase):
             content_type="application/json",
             HTTP_AUTHORIZATION=f"Token {token}",
         )
-        self.assertEqual(conflict_response.status_code, 400)
+        self.assertEqual(conflict_response.status_code, 409)
 
     def test_get_tag_detail(self):
         """

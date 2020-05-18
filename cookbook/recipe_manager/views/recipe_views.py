@@ -91,6 +91,7 @@ class RecipeView(APIView):
         try:
             with transaction.atomic():
                 recipe_instance = serializers["recipe"].save()
+
                 for serializer in serializers["ingredients"]:
                     ingredient = serializer.data
                     recipe_instance.ingredients.add(
@@ -111,15 +112,10 @@ class RecipeView(APIView):
                     except models.Tag.DoesNotExist:
                         pass
 
-        except models.Ingredient.DoesNotExist:
-            response = Response(
-                {"message": "A provided ingredient ID does not exist"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
         except IntegrityError as err:
             response = Response(
-                {"message": str(err.__cause__)}, status=status.HTTP_400_BAD_REQUEST
+                {"errors": {"non_field_errors": (str(err.__cause__),)}},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         else:
@@ -206,7 +202,8 @@ class RecipeDetailView(APIView):
 
             except IntegrityError as err:
                 return Response(
-                    {"message": str(err.__cause__)}, status=status.HTTP_400_BAD_REQUEST
+                    {"errors": {"non_field_errors": (str(err.__cause__),)}},
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
 
         return Response(

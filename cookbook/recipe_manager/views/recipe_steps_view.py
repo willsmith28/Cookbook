@@ -191,7 +191,7 @@ class RecipeStepDetail(APIView):
 
         else:
             response = Response(
-                {"message": "Steps must be deleted in decresing order"},
+                {"errors": ("Steps must be deleted in decresing order",)},
                 status=status.HTTP_409_CONFLICT,
             )
 
