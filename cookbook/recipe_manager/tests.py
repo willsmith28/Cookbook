@@ -1,6 +1,8 @@
 """RecipeManager Tests
 """
 # pylint: disable=import-error,too-many-public-methods
+import random
+import string
 from django.test import TestCase, Client
 from django.urls import reverse
 from model_bakery import baker, seq
@@ -215,7 +217,7 @@ class RecipeTestCase(TestCase):
             "servings": "3",
             "cook_time": "1  hour",
             "ingredients": 23,
-            "steps": 1,
+            "steps": "hi",
             "tags": 3,
         }
 

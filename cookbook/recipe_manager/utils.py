@@ -81,34 +81,38 @@ def validate_recipe(data):
 
     errors = {}
 
-    try:
+    if isinstance(ingredients := data.pop("ingredients", ()), (list, tuple)):
         ingredient_in_recipe_serializers = tuple(
             serializers.IngredientInRecipeSerializer(data=ingredient)
-            for ingredient in data.pop("ingredients", ())
+            for ingredient in ingredients
         )
 
-    except TypeError:
+    else:
         errors["ingredients"] = {
             "non_field_errors": [
                 "ingredients must be an Array of RecipeInIngredient objects"
             ]
         }
 
-    try:
+    steps = data.pop("steps", ())
+    if isinstance(steps, (list, tuple)):
         step_serializers = tuple(
             serializers.StepSerializer(
                 data={"order": index, "instruction": instruction}
             )
-            for index, instruction in enumerate(data.pop("steps", ()), 1)
+            for index, instruction in enumerate(steps, 1)
         )
 
-    except TypeError:
+    else:
         errors["steps"] = {"non_field_errors": ["steps must be an Array of Strings"]}
 
-    try:
-        tag_ids = tuple(tag_id for tag_id in data.pop("tags", ()))
+    if isinstance(tags := data.pop("tags", ()), (list, tuple)):
+        try:
+            tag_ids = tuple(int(tag_id) for tag_id in tags)
+        except ValueError:
+            errors["tags"] = {"non_field_errors": ["tags must be an array of Tag IDs"]}
 
-    except TypeError:
+    else:
         errors["tags"] = {"non_field_errors": ["tags must be an Array of Tag IDs"]}
 
     recipe_serializer = serializers.RecipeSerializer(data=data)
