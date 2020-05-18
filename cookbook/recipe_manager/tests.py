@@ -630,6 +630,22 @@ class RecipeStepsCase(TestCase):
         response_data = response.json()
         self.assertEqual(len(response_data), self.recipe1.steps.count())
 
+    def test_steps_are_in_order(self):
+        """
+        GET /recipe/<int:recipe_pk>/steps/ Correct order
+        """
+        token = get_token()
+        response = self.client.get(
+            reverse("recipe-steps", kwargs={"recipe_pk": self.recipe1.id},),
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Token {token}",
+        )
+        response_data = response.json()
+        for response_instruction, db_step in zip(
+            response_data, self.recipe1.steps.all()
+        ):
+            self.assertEqual(response_instruction, db_step.instruction)
+
     def test_add_step_to_recipe(self):
         """
         POST /recipe/<int:recipe_pk>/steps/
@@ -678,7 +694,7 @@ class RecipeStepsCase(TestCase):
 
         self.assertEqual(response.json()["instruction"], test_step["instruction"])
 
-    def test_delete_not_last_step(self):
+    def test_delete_step_isnt_last(self):
         """
         DELETE /recipe/<int:recipe_pk>/steps/<int:order>/
         """

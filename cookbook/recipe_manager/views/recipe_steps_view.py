@@ -1,7 +1,7 @@
 """
 Views for /recipe/<recipe_pk>/steps/ and /recipe/<recipe_pk>/steps/<step_pk>
 """
-
+from django.db.models import Prefetch
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
@@ -37,14 +37,16 @@ class RecipeStep(APIView):
             Response: DRF response
         """
         try:
-            recipe = models.Recipe.objects.prefetch_related("steps").get(id=recipe_pk)
+            recipe = models.Recipe.objects.prefetch_related(
+                Prefetch("steps", queryset=models.Step.objects.only("instruction"))
+            ).get(id=recipe_pk)
 
         except models.Recipe.DoesNotExist:
             response = Response(status=status.HTTP_404_NOT_FOUND,)
 
         else:
             response = Response(
-                tuple(StepSerializer(step).data for step in recipe.steps.all()),
+                tuple(step.instruction for step in recipe.steps.all()),
                 status=status.HTTP_200_OK,
             )
 
