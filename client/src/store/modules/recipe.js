@@ -356,12 +356,23 @@ const actions = {
 const getters = {
   getIngredient: state => id => {
     const {
-      ingredients: { [id]: ingredient }
+      ingredients: { [`${id}`]: ingredient }
     } = state;
     return ingredient;
   },
 
-  getIngredientByName: state => name => {
+  getIngredientName: state => id => {
+    const {
+      ingredients: {
+        [`${id}`]: {
+          ingredient: { name }
+        }
+      }
+    } = state;
+    return name;
+  },
+
+  findIngredientByName: state => name => {
     return Object.values(state.ingredients).find(
       ingredient => ingredient.name === name
     );
@@ -389,7 +400,7 @@ const getters = {
 
   getTag: state => id => {
     const {
-      tags: { [id]: tag }
+      tags: { [`${id}`]: tag }
     } = state;
     return tag;
   },
@@ -402,9 +413,20 @@ const getters = {
 
   getRecipe: state => id => {
     const {
-      recipes: { [id]: recipe }
+      recipes: { [`${id}`]: recipe }
     } = state;
     return recipe;
+  },
+
+  getRecipeName: state => id => {
+    const {
+      recipes: {
+        [`${id}`]: {
+          recipe: { name }
+        }
+      }
+    } = state;
+    return name;
   },
 
   recipeCount: state => Object.keys(state.recipes).length,
@@ -412,7 +434,7 @@ const getters = {
   getIngredientInRecipe: state => (ingredient_id, recipe_id) => {
     const {
       ingredientsInRecipe: {
-        [recipe_id]: { [ingredient_id]: ingredientInRecipe }
+        [`${recipe_id}`]: { [`${ingredient_id}`]: ingredientInRecipe }
       }
     } = state;
     return ingredientInRecipe;
@@ -420,7 +442,7 @@ const getters = {
 
   ingredientInRecipeCount: state => recipe_id => {
     const {
-      ingredientsInRecipe: { [recipe_id]: ingredientsInRecipe }
+      ingredientsInRecipe: { [`${recipe_id}`]: ingredientsInRecipe }
     } = state;
     return Object.keys(ingredientsInRecipe).length;
   },
