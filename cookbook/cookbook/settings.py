@@ -21,10 +21,10 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # SECURITY WARNING: keep the secret key used in production secret!
 # TODO environment variable
-SECRET_KEY = "n-du=2-0keppq@^b@3xbpn&r4edh$18$19)0l%*pb4tyxav-+h"
+SECRET_KEY = os.environ.get("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("APP_ENV", "DEBUG") == "DEBUG"
 
 ALLOWED_HOSTS = ("localhost", "127.0.0.1")
 
