@@ -60,6 +60,9 @@ const mutations = {
     // GET /tag/pk/ or POST /tag/
     Vue.set(state.tags, `${tag.id}`, tag);
   },
+  ADD_TAG_KINDS(state, kinds) {
+    state.tagKinds = kinds;
+  },
   ADD_RECIPE(state, recipe) {
     // GET,PUT /recipe/pk/ or GET, POST /recipe/
     Vue.set(state.recipes, `${recipe.id}`, recipe);
@@ -147,6 +150,7 @@ const actions = {
         dispatch("fetchAllIngredients"),
         dispatch("fetchIngredientUnits"),
         dispatch("fetchAllTags"),
+        dispatch("fetchTagKinds"),
         dispatch("fetchAllRecipes")
       ]);
     } catch (error) {
@@ -185,6 +189,22 @@ const actions = {
     try {
       const { data: tags } = await requests.getAllTags();
       commit("ADD_TAGS_FROM_LIST", tags);
+    } catch (error) {
+      handleError(error);
+    }
+  },
+  async fetchTagDetail({ commit }, tagID) {
+    try {
+      const { data: tag } = await requests.getTag(tagID);
+      commit("ADD_TAG", tag);
+    } catch (error) {
+      handleError(error);
+    }
+  },
+  async fetchTagKinds({ commit }) {
+    try {
+      const { data: kinds } = await requests.getTagKinds();
+      commit("ADD_TAG_KINDS", kinds);
     } catch (error) {
       handleError(error);
     }
@@ -401,6 +421,8 @@ const getters = {
     return units;
   },
 
+  tagKinds: state => [...state.tagKinds],
+
   ingredientCount: state => Object.keys(state.ingredients).length,
 
   getTag: state => id => {
@@ -415,6 +437,8 @@ const getters = {
   tagCount: state => Object.keys(state.tags).length,
 
   recipes: state => Object.values(state.recipes),
+
+  recipeIDs: state => Object.keys(state.recipes),
 
   getRecipe: state => id => {
     const {
@@ -455,6 +479,13 @@ const getters = {
       steps: { [`${recipe_id}`]: steps }
     } = state;
     return [...steps];
+  },
+
+  stepInRecipeCount: state => recipe_id => {
+    const {
+      steps: { [`${recipe_id}`]: steps }
+    } = state;
+    return steps.length;
   }
 };
 
