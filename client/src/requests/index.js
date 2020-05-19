@@ -40,6 +40,10 @@ const requests = {
     return client.get(`/recipe-manager/tag/${id}/`);
   },
 
+  getTagKinds() {
+    return client.get("/recipe-manager/tag/kind/");
+  },
+
   getAllRecipes() {
     return client.get("/recipe-manager/recipe/");
   },
