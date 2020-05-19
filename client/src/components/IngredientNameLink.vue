@@ -10,9 +10,9 @@
         {{ getRecipeName(ingredient.recipe_id) }}
       </router-link>
     </span>
-    <span v-else>
+    <b v-else>
       {{ ingredient.name }}
-    </span>
+    </b>
   </span>
 </template>
 
@@ -21,14 +21,14 @@ import { mapGetters } from "vuex";
 export default {
   name: "IngredientNameLink",
   props: {
-    ingredientID: {
+    ingredientId: {
       type: [String, Number],
       required: true
     }
   },
   computed: {
     ingredient() {
-      return this.getIngredient(this.ingredientID);
+      return this.getIngredient(this.ingredientId);
     },
     ...mapGetters("recipe", ["getRecipeName", "getIngredient"])
   }
