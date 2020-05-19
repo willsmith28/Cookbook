@@ -1,18 +1,23 @@
 <template>
-  <div class="home">
-    <img alt="Vue logo" src="../assets/logo.png" />
-    <HelloWorld msg="Welcome to Your Vue.js App" />
+  <div class="home md-layout md-alignment-top-center">
+    <recipe-overview-card
+      v-for="(recipeId, index) in recipeIDs"
+      :key="index"
+      class="md-layout-item md-small-size-95 md-medium-size-33"
+      :recipe-id="recipeId"
+      hover
+    />
   </div>
 </template>
 
 <script>
-// @ is an alias to /src
-import HelloWorld from "@/components/HelloWorld.vue";
-
+import { mapGetters } from "vuex";
+import RecipeOverviewCard from "@/components/RecipeOverviewCard";
 export default {
   name: "Home",
-  components: {
-    HelloWorld
+  components: { RecipeOverviewCard },
+  computed: {
+    ...mapGetters("recipe", ["recipeIDs"])
   }
 };
 </script>
