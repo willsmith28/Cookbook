@@ -1,7 +1,11 @@
 <template>
   <div>
-    <form nonvalidate class="md-layout" @submit.prevent="login">
-      <md-card class="md-layout-item md-size-50 md-small-size-100">
+    <form
+      nonvalidate
+      class="md-layout md-alignment-top-center"
+      @submit.prevent="login"
+    >
+      <md-card class="md-layout-item md-size-66 md-small-size-100">
         <md-card-header>
           <div class="md-title">Login</div>
         </md-card-header>
