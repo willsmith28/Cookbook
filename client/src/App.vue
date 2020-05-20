@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <md-app>
+    <md-app class="fill-viewport">
       <md-app-toolbar class="md-primary">
         <md-button
           v-show="!menuVisible"
@@ -9,7 +9,7 @@
         >
           <md-icon>menu</md-icon>
         </md-button>
-        <span class="md-title">Cookbook</span>
+        <md-button class="md-title" :to="{ name: 'home' }">Cookbook</md-button>
       </md-app-toolbar>
 
       <md-app-drawer :md-active.sync="menuVisible" md-persistent="full">
@@ -23,22 +23,7 @@
           </div>
         </md-toolbar>
 
-        <md-list>
-          <md-list-item :to="{ name: 'home' }">
-            <md-icon>home</md-icon>
-            <span class="md-list-item-text">Recipes</span>
-          </md-list-item>
-
-          <md-list-item v-if="!loggedIn" :to="{ name: 'login' }">
-            <md-icon>account_box</md-icon>
-            <span class="md-list-item-text">Login</span>
-          </md-list-item>
-
-          <md-list-item v-else @click="logout">
-            <md-icon>account_box</md-icon>
-            <span class="md-list-item-text">Logout</span>
-          </md-list-item>
-        </md-list>
+        <navigation-list />
       </md-app-drawer>
 
       <md-app-content>
@@ -50,7 +35,9 @@
 
 <script>
 import { mapActions, mapGetters } from "vuex";
+import NavigationList from "@/components/NavigationList";
 export default {
+  components: { NavigationList },
   data() {
     return {
       menuVisible: false
@@ -85,6 +72,10 @@ export default {
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
+}
+
+.fill-viewport {
+  min-height: 100vh;
 }
 
 #nav {
