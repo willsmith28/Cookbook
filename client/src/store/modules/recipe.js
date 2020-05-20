@@ -243,6 +243,7 @@ const actions = {
     try {
       const { data: createdRecipe } = await requests.createRecipe(recipe);
       await dispatch("addRecipeToState", createdRecipe);
+      return createdRecipe.id;
     } catch (error) {
       // TODO handle 400
       handleError(error);
@@ -257,11 +258,15 @@ const actions = {
       handleError(error);
     }
   },
-  async editRecipe({ dispatch }, recipe) {
+  async editRecipe({ dispatch }, { recipe_id, recipe }) {
     // PUT /recipe/pk/
     try {
-      const { data: changedRecipe } = await requests.editRecipe(recipe);
+      const { data: changedRecipe } = await requests.editRecipe(
+        recipe_id,
+        recipe
+      );
       await dispatch("addRecipeToState", changedRecipe);
+      return changedRecipe.id;
     } catch (error) {
       handleError(error);
     }
@@ -378,7 +383,7 @@ const getters = {
     const {
       ingredients: { [`${id}`]: ingredient }
     } = state;
-    return ingredient;
+    return Object.assign({}, ingredient);
   },
 
   getIngredientName: state => id => {
@@ -390,17 +395,6 @@ const getters = {
       }
     } = state;
     return name;
-  },
-
-  findIngredientByName: state => name => {
-    const ingredient = Object.values(state.ingredients).find(
-      ingredient => ingredient.name === name
-    );
-    if (ingredient) {
-      return ingredient;
-    } else {
-      return null;
-    }
   },
 
   ingredients: state => Object.values(state.ingredients),
@@ -429,7 +423,7 @@ const getters = {
     const {
       tags: { [`${id}`]: tag }
     } = state;
-    return tag;
+    return Object.assign({}, tag);
   },
 
   tags: state => Object.values(state.tags),
@@ -444,7 +438,7 @@ const getters = {
     const {
       recipes: { [`${id}`]: recipe }
     } = state;
-    return recipe;
+    return Object.assign({}, recipe);
   },
 
   getRecipeName: state => id => {

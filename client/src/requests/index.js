@@ -56,8 +56,8 @@ const requests = {
     return client.get(`/recipe-manager/recipe/${id}/`);
   },
 
-  editRecipe(recipe) {
-    return client.put(`/recipe-manager/recipe/${recipe.id}/`, recipe);
+  editRecipe(recipe_id, recipe) {
+    return client.put(`/recipe-manager/recipe/${recipe_id}/`, recipe);
   },
 
   getAllIngredientsInRecipe(recipe_id) {
