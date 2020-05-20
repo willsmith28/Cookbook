@@ -23,8 +23,7 @@ const routes = [
   {
     path: "/recipe/create",
     name: "recipe-create",
-    component: CreateEditRecipe,
-    alias: ["/recipe/create/ingredients", "/recipe/create/steps"]
+    component: CreateEditRecipe
   },
   {
     path: "/recipe/:id",
@@ -33,7 +32,26 @@ const routes = [
       import(
         /* webpackChunkName: "recipe-detail" */ "../views/RecipeDetail.vue"
       ),
-    props: true
+    props: true,
+    children: [
+      {
+        path: "edit",
+        name: "recipe-edit",
+        component: CreateEditRecipe,
+        children: [
+          {
+            path: "ingredients",
+            name: "recipe-edit-ingredients",
+            component: CreateEditRecipe
+          },
+          {
+            path: "steps",
+            name: "recipe-edit-steps",
+            component: CreateEditRecipe
+          }
+        ]
+      }
+    ]
   }
 ];
 
