@@ -21,10 +21,10 @@
       </div>
     </md-card-content>
 
-    <md-card-actions v-if="$route.name !== 'recipe-detail'">
-      <router-link :to="`/recipe/${recipeId}/`">
+    <md-card-actions>
+      <md-button :to="`/recipe/${recipeId}/`">
         See Details
-      </router-link>
+      </md-button>
     </md-card-actions>
   </md-card>
 </template>
@@ -42,6 +42,9 @@ export default {
     }
   },
   computed: {
+    onDetailPage() {
+      return this.$route.name === "recipe-detail";
+    },
     recipe() {
       return this.getRecipe(this.recipeId);
     },
