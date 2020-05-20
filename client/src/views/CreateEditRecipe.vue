@@ -115,10 +115,6 @@ export default {
   data() {
     return {
       formData: {
-        name: null,
-        description: null,
-        servings: null,
-        cook_time: null,
         ingredients: [],
         steps: [],
         tags: []
@@ -127,13 +123,6 @@ export default {
   },
   validations: {
     formData: {
-      name: { required },
-      description: { required },
-      servings: { required },
-      cook_time: {
-        required,
-        validateCookTime: value => new RegExp("").test(value)
-      },
       ingredients: {
         $each: {
           amount: { required },
@@ -153,13 +142,6 @@ export default {
     }
   },
   computed: {
-    stepperPath() {
-      if (this.recipeId) {
-        return `/recipe/${this.recipeId}/edit`;
-      } else {
-        return "/recipe/create";
-      }
-    },
     ...mapGetters("recipe", [
       "ingredients",
       "ingredientUnits",
@@ -169,32 +151,7 @@ export default {
     ])
   },
   created() {
-    console.log("component created");
-    if (this.recipeId) {
-      const recipe = this.getRecipe(this.recipeId);
-      if (recipe) {
-        const { name, description, servings, cook_time, tags } = recipe;
-        const ingredients = this.getIngredientsInRecipe(this.recipeId);
-        const steps = this.getSteps(this.recipeId);
-        this.formData = {
-          name,
-          description,
-          servings,
-          cook_time,
-          ingredients,
-          steps,
-          tags
-        };
-      }
-    } else {
-      this.formData.ingredients.push({
-        amount: null,
-        unit: null,
-        ingredient_id: null,
-        specifier: null
-      });
-      this.formData.steps.push({ instruction: null });
-    }
+    console.log("create edit recipe");
   },
   methods: {
     getValidationClass(fieldName) {
