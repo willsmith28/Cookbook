@@ -3,6 +3,11 @@ import VueRouter from "vue-router";
 
 Vue.use(VueRouter);
 
+const CreateEditRecipe = () =>
+  import(
+    /* webpackChunkName: "recipe-create-edit" */ "../views/CreateEditRecipe.vue"
+  );
+
 const routes = [
   {
     path: "/",
@@ -10,16 +15,24 @@ const routes = [
     component: () => import(/* webpackChunkName: "home" */ "../views/Home.vue")
   },
   {
-    path: "/login/",
+    path: "/login",
     name: "login",
     component: () =>
       import(/* webpackChunkName: "login" */ "../views/Login.vue")
   },
   {
-    path: "/recipe/:id/",
+    path: "/recipe/create",
+    name: "recipe-create",
+    component: CreateEditRecipe,
+    alias: ["/recipe/create/ingredients", "/recipe/create/steps"]
+  },
+  {
+    path: "/recipe/:id",
     name: "recipe-detail",
     component: () =>
-      import(/* webpackChunkName: "about" */ "../views/RecipeDetail.vue"),
+      import(
+        /* webpackChunkName: "recipe-detail" */ "../views/RecipeDetail.vue"
+      ),
     props: true
   }
 ];
