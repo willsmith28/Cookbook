@@ -1,0 +1,57 @@
+###########
+# BUILDER #
+###########
+FROM python:3.8.3-slim-buster AS builder
+
+WORKDIR /app
+
+ENV APP_ENV dev
+ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE 1
+
+
+RUN apt-get update && apt-get install --no-install-recommends -yqq \
+    build-essential libpq-dev
+
+# build dependency wheels
+RUN pip install --upgrade pip
+COPY ./requirements/prod.txt /usr/src/app/requirements/prod.txt
+RUN pip wheel \
+    --no-cache-dir \
+    --no-deps \
+    --wheel-dir=/usr/src/app/wheels \
+    -r /usr/src/app/requirements/prod.txt
+
+#########
+# FINAL #
+#########
+FROM python:3.8.3-slim-buster
+
+# create app user
+RUN groupadd app \
+    && useradd -g app -m -s /bin/bash app
+
+# create directories
+ENV HOME=/home/app
+ENV APP_HOME=/home/app/web
+RUN mkdir ${APP_HOME}
+WORKDIR ${APP_HOME}
+
+#install dependencies
+RUN apt-get update && apt-get install --no-install-recommends -yqq \
+    libpq-dev
+
+COPY --from=builder /usr/src/app/wheels /wheels
+COPY --from=builder /usr/src/app/requirements/prod.txt .
+RUN pip install --upgrade pip
+RUN pip install --no-cache /wheels/*
+
+COPY ./entrypoint.prod.sh ${APP_HOME}
+
+COPY . ${APP_HOME}
+
+RUN chown -R app:app ${APP_HOME}
+
+USER app
+
+ENTRYPOINT [ "./entrypoint.prod.sh" ]
