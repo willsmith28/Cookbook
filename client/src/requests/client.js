@@ -1,4 +1,6 @@
 import axios from "axios";
+import router from "../router";
+import store from "../store";
 
 const client = axios.create({
   baseURL: "http://127.0.0.1:8000/api",
@@ -9,48 +11,53 @@ const client = axios.create({
   }
 });
 
-const getAuthToken = () => localStorage.getItem("token");
+const getAccessToken = () => localStorage.getItem("access");
+const getRefreshToken = () => localStorage.getItem("refresh");
 
 const authInterceptor = config => {
-  const token = getAuthToken();
+  const token = getAccessToken();
 
-  config.headers["Authorization"] = token ? `Token ${token}` : "";
+  config.headers["Authorization"] = token
+    ? `Authorization: Bearer ${token}`
+    : "";
 
   return config;
 };
 
-const errorInterceptor = error => {
-  switch (error.response.status) {
-    case 400:
-      console.log(error.response.data);
-      break;
-    case 401:
-      // TODO router push login
-      console.log(error.response.data);
-      break;
-    case 403:
-      // TODO not aloud
-      console.log(error.response.data);
-      break;
-    case 404:
-      // TODO router push 404
-      console.log(error.response.data);
-      break;
-    case 409:
-      // TODO thing you created exists
-      console.log(error.response.data);
-      break;
-    default:
-      break;
+const refreshTokenOnUnAuthorized = error => {
+  const refreshToken = getRefreshToken();
+  if (!refreshToken || error.response.status !== 401) {
+    return Promise.reject(error);
+  }
+  if (error.config.url.includes("/token/refresh")) {
+    router.push({ name: "home" });
+    return Promise.reject(error);
+  }
+  const { config: originalRequest } = error;
+  if (refreshToken) {
+    return client
+      .post("/token/refresh/", { refreshToken })
+      .then(({ data }) => {
+        localStorage.setItem("access", data.access);
+        originalRequest.headers[
+          "Authorization"
+        ] = `Authorization: Bearer ${data.access}`;
+        return axios(originalRequest);
+      })
+      .catch(error => {
+        console.log(error);
+      });
   }
   return Promise.reject(error);
 };
 
-const responseInterceptor = response => {
-  return response;
-};
+const responseSuccessInterceptor = response => response;
+const requestErrorInterceptor = error => Promise.reject(error);
 
-client.interceptors.request.use(authInterceptor);
-client.interceptors.response.use(responseInterceptor, errorInterceptor);
+client.interceptors.request.use(authInterceptor, requestErrorInterceptor);
+client.interceptors.response.use(
+  responseSuccessInterceptor,
+  refreshTokenOnUnAuthorized
+);
 
 export default client;

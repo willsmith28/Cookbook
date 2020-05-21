@@ -1,24 +1,30 @@
 """Get user view
 """
-from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework import status
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 
-class UserView(APIView):
-    """GET -> /me/
+class TokenObtainPairSerializerWithClaims(TokenObtainPairSerializer):
+    """
+    simple_jwt TokenObtainPairSerializer extension to add user info to jwt claims
     """
 
-    permissions = (IsAuthenticated,)
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
 
-    def get(self, request):
-        """
-        Get Logged in user data
-        """
-        try:
-            return Response(request.user.to_json(), status=status.HTTP_200_OK)
-        except AttributeError:
-            return Response(
-                {"message": "User not logged in"}, status=status.HTTP_401_UNAUTHORIZED
-            )
+        token["username"] = user.username
+        token["email"] = user.email
+        token["is_staff"] = user.is_staff
+        token["is_superuser"] = user.is_superuser
+        token["date_joined"] = user.date_joined.strftime("%Y-%m-%dT%H-%M-%S")
+
+        return token
+
+
+class TokenObtainPairViewWithClaims(TokenObtainPairView):
+    """
+    TokenObtainPairView extension to use custom Serializer
+    """
+
+    serializer_class = TokenObtainPairSerializerWithClaims

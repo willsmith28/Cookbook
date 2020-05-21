@@ -2,10 +2,14 @@ import client from "./client";
 
 const requests = {
   login(username, password) {
-    return client.post("/auth/", {
+    return client.post("/token/", {
       username,
       password
     });
+  },
+
+  refreshTokens(refresh) {
+    return client.post("/token/refresh/", { refresh });
   },
 
   getUserInfo() {

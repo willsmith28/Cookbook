@@ -30,17 +30,3 @@ class User(auth_models.AbstractBaseUser, auth_models.PermissionsMixin):
 
     class Meta:
         db_table = "cookbook_user"
-
-    def to_json(self):
-        """returns json serializable dict representation of user
-
-        Returns:
-            dict: the user in dictionary form
-        """
-        return {
-            "username": self.username,
-            "email": self.email,
-            "is_staff": self.is_staff,
-            "is_superuser": self.is_superuser,
-            "date_joined": self.date_joined,
-        }
