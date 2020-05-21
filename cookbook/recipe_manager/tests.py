@@ -25,10 +25,12 @@ def get_token(user_name=TEST_USER_NAME, password=TEST_PASSWORD):
     """
     client = Client()
     response = client.post(
-        "/api-token-auth/", {"username": user_name, "password": password}
+        reverse("token_obtain_pair"),
+        {"username": user_name, "password": password},
+        content_type="application/json",
     )
     response_data = response.json()
-    return response_data["token"]
+    return f'Bearer {response_data["access"]}'
 
 
 class IngredientTestCase(TestCase):
@@ -62,7 +64,7 @@ class IngredientTestCase(TestCase):
             reverse("ingredient"),
             test_ingredient,
             content_type="application/json",
-            HTTP_AUTHORIZATION=f"Token {token}",
+            HTTP_AUTHORIZATION=token,
         )
         response_data = response.json()
         self.assertIn("id", response_data)
@@ -78,14 +80,14 @@ class IngredientTestCase(TestCase):
             reverse("ingredient"),
             test_ingredient,
             content_type="application/json",
-            HTTP_AUTHORIZATION=f"Token {token}",
+            HTTP_AUTHORIZATION=token,
         )
         self.assertEqual(response_success.status_code, 201)
         response_conflict = self.client.post(
             reverse("ingredient"),
             test_ingredient,
             content_type="application/json",
-            HTTP_AUTHORIZATION=f"Token {token}",
+            HTTP_AUTHORIZATION=token,
         )
         self.assertEqual(response_conflict.status_code, 400)
 
@@ -131,7 +133,7 @@ class TagTestCase(TestCase):
             reverse("tag"),
             {"value": "slow cooker", "kind": "Prep Method"},
             content_type="application/json",
-            HTTP_AUTHORIZATION=f"Token {token}",
+            HTTP_AUTHORIZATION=token,
         )
         self.assertIn("id", response.json())
         self.assertEqual(response.status_code, 201)
@@ -146,14 +148,14 @@ class TagTestCase(TestCase):
             reverse("tag"),
             test_tag,
             content_type="application/json",
-            HTTP_AUTHORIZATION=f"Token {token}",
+            HTTP_AUTHORIZATION=token,
         )
         self.assertEqual(success_response.status_code, 201)
         conflict_response = self.client.post(
             reverse("tag"),
             test_tag,
             content_type="application/json",
-            HTTP_AUTHORIZATION=f"Token {token}",
+            HTTP_AUTHORIZATION=token,
         )
         self.assertEqual(conflict_response.status_code, 409)
 
@@ -237,7 +239,7 @@ class RecipeTestCase(TestCase):
             reverse("recipe"),
             self.test_valid_recipe,
             content_type="application/json",
-            HTTP_AUTHORIZATION=f"Token {token}",
+            HTTP_AUTHORIZATION=token,
         )
         response_data = response.json()
         recipe_from_db = models.Recipe.objects.get(name=self.test_valid_recipe["name"])
@@ -255,7 +257,7 @@ class RecipeTestCase(TestCase):
                 for field in constants.REQUIRED_RECIPE_FIELDS
             },
             content_type="application/json",
-            HTTP_AUTHORIZATION=f"Token {token}",
+            HTTP_AUTHORIZATION=token,
         )
         response_data = response.json()
         recipe_from_db = models.Recipe.objects.get(name=self.test_valid_recipe["name"])
@@ -270,7 +272,7 @@ class RecipeTestCase(TestCase):
             reverse("recipe"),
             self.test_invalid_recipe,
             content_type="application/json",
-            HTTP_AUTHORIZATION=f"Token {token}",
+            HTTP_AUTHORIZATION=token,
         )
         self.assertEqual(response.status_code, 400)
 
@@ -283,7 +285,7 @@ class RecipeTestCase(TestCase):
             reverse("recipe"),
             {**self.test_valid_recipe, "steps": self.test_invalid_recipe["steps"],},
             content_type="application/json",
-            HTTP_AUTHORIZATION=f"Token {token}",
+            HTTP_AUTHORIZATION=token,
         )
         self.assertEqual(response.status_code, 400)
 
@@ -299,7 +301,7 @@ class RecipeTestCase(TestCase):
                 "ingredients": self.test_invalid_recipe["ingredients"],
             },
             content_type="application/json",
-            HTTP_AUTHORIZATION=f"Token {token}",
+            HTTP_AUTHORIZATION=token,
         )
         self.assertEqual(response.status_code, 400)
 
@@ -312,7 +314,7 @@ class RecipeTestCase(TestCase):
             reverse("recipe"),
             {**self.test_valid_recipe, "tags": self.test_invalid_recipe["tags"],},
             content_type="application/json",
-            HTTP_AUTHORIZATION=f"Token {token}",
+            HTTP_AUTHORIZATION=token,
         )
         self.assertEqual(response.status_code, 400)
 
@@ -336,14 +338,14 @@ class RecipeTestCase(TestCase):
             reverse("recipe"),
             self.test_valid_recipe,
             content_type="application/json",
-            HTTP_AUTHORIZATION=f"Token {token}",
+            HTTP_AUTHORIZATION=token,
         )
         self.assertEqual(response_success.status_code, 201)
         response_failure = self.client.post(
             reverse("recipe"),
             self.test_valid_recipe,
             content_type="application/json",
-            HTTP_AUTHORIZATION=f"Token {token}",
+            HTTP_AUTHORIZATION=token,
         )
         self.assertEqual(response_failure.status_code, 400)
 
@@ -374,7 +376,7 @@ class RecipeTestCase(TestCase):
             reverse("recipe-detail", kwargs={"pk": self.recipe1.id}),
             updated_recipe,
             content_type="application/json",
-            HTTP_AUTHORIZATION=f"Token {token}",
+            HTTP_AUTHORIZATION=token,
         )
 
         recipe_from_db = models.Recipe.objects.get(id=self.recipe1.id)
@@ -394,7 +396,7 @@ class RecipeTestCase(TestCase):
             reverse("recipe-detail", kwargs={"pk": self.recipe1.id}),
             updated_recipe,
             content_type="application/json",
-            HTTP_AUTHORIZATION=f"Token {token}",
+            HTTP_AUTHORIZATION=token,
         )
         self.assertEqual(response.status_code, 403)
 
@@ -448,7 +450,7 @@ class RecipeIngredientCase(TestCase):
             reverse("recipe-ingredients", kwargs={"recipe_pk": self.recipe1.id}),
             self.test_recipe_ingredient,
             content_type="application/json",
-            HTTP_AUTHORIZATION=f"Token {token}",
+            HTTP_AUTHORIZATION=token,
         )
 
         self.assertEqual(response.status_code, 201)
@@ -462,7 +464,7 @@ class RecipeIngredientCase(TestCase):
             reverse("recipe-ingredients", kwargs={"recipe_pk": self.recipe1.id}),
             {**self.test_recipe_ingredient, "ingredient_id": 999999},
             content_type="application/json",
-            HTTP_AUTHORIZATION=f"Token {token}",
+            HTTP_AUTHORIZATION=token,
         )
 
         self.assertEqual(response.status_code, 400)
@@ -476,7 +478,7 @@ class RecipeIngredientCase(TestCase):
             reverse("recipe-ingredients", kwargs={"recipe_pk": self.recipe1.id}),
             {**self.test_recipe_ingredient, "unit": None},
             content_type="application/json",
-            HTTP_AUTHORIZATION=f"Token {token}",
+            HTTP_AUTHORIZATION=token,
         )
 
         self.assertEqual(response.status_code, 400)
@@ -490,7 +492,7 @@ class RecipeIngredientCase(TestCase):
             reverse("recipe-ingredients", kwargs={"recipe_pk": self.recipe1.id}),
             self.test_recipe_ingredient,
             content_type="application/json",
-            HTTP_AUTHORIZATION=f"Token {token}",
+            HTTP_AUTHORIZATION=token,
         )
         self.assertEqual(response.status_code, 403)
 
@@ -536,7 +538,7 @@ class RecipeIngredientCase(TestCase):
             ),
             test_recipe_ingredient,
             content_type="application/json",
-            HTTP_AUTHORIZATION=f"Token {token}",
+            HTTP_AUTHORIZATION=token,
         )
         response_data = response.json()
 
@@ -564,7 +566,7 @@ class RecipeIngredientCase(TestCase):
             ),
             test_recipe_ingredient,
             content_type="application/json",
-            HTTP_AUTHORIZATION=f"Token {token}",
+            HTTP_AUTHORIZATION=token,
         )
         self.assertEqual(response.status_code, 403)
 
@@ -586,7 +588,7 @@ class RecipeIngredientCase(TestCase):
                 },
             ),
             content_type="application/json",
-            HTTP_AUTHORIZATION=f"Token {token}",
+            HTTP_AUTHORIZATION=token,
         )
         self.assertEqual(response.status_code, 204)
         self.assertEqual(
@@ -623,7 +625,7 @@ class RecipeStepsCase(TestCase):
         response = self.client.get(
             reverse("recipe-steps", kwargs={"recipe_pk": self.recipe1.id},),
             content_type="application/json",
-            HTTP_AUTHORIZATION=f"Token {token}",
+            HTTP_AUTHORIZATION=token,
         )
         response_data = response.json()
         self.assertEqual(len(response_data), self.recipe1.steps.count())
@@ -636,7 +638,7 @@ class RecipeStepsCase(TestCase):
         response = self.client.get(
             reverse("recipe-steps", kwargs={"recipe_pk": self.recipe1.id},),
             content_type="application/json",
-            HTTP_AUTHORIZATION=f"Token {token}",
+            HTTP_AUTHORIZATION=token,
         )
         response_data = response.json()
         for response_instruction, db_step in zip(
@@ -653,7 +655,7 @@ class RecipeStepsCase(TestCase):
             reverse("recipe-steps", kwargs={"recipe_pk": self.recipe1.id},),
             {"instruction": "enjoy"},
             content_type="application/json",
-            HTTP_AUTHORIZATION=f"Token {token}",
+            HTTP_AUTHORIZATION=token,
         )
         response_data = response.json()
         step = self.recipe1.steps.all().last()
@@ -669,7 +671,7 @@ class RecipeStepsCase(TestCase):
             reverse("recipe-steps", kwargs={"recipe_pk": self.recipe1.id},),
             {"instruction": "enjoy"},
             content_type="application/json",
-            HTTP_AUTHORIZATION=f"Token {token}",
+            HTTP_AUTHORIZATION=token,
         )
         self.assertEqual(response.status_code, 403)
 
@@ -687,7 +689,7 @@ class RecipeStepsCase(TestCase):
             ),
             test_step,
             content_type="application/json",
-            HTTP_AUTHORIZATION=f"Token {token}",
+            HTTP_AUTHORIZATION=token,
         )
 
         self.assertEqual(response.json()["instruction"], test_step["instruction"])
@@ -704,7 +706,7 @@ class RecipeStepsCase(TestCase):
                 kwargs={"recipe_pk": self.recipe1.id, "order": db_step.order},
             ),
             content_type="application/json",
-            HTTP_AUTHORIZATION=f"Token {token}",
+            HTTP_AUTHORIZATION=token,
         )
         self.assertEqual(response.status_code, 409)
 
@@ -720,7 +722,7 @@ class RecipeStepsCase(TestCase):
                 kwargs={"recipe_pk": self.recipe1.id, "order": db_step.order},
             ),
             content_type="application/json",
-            HTTP_AUTHORIZATION=f"Token {token}",
+            HTTP_AUTHORIZATION=token,
         )
         self.assertEqual(response.status_code, 204)
 
@@ -756,7 +758,7 @@ class RecipeTagTest(TestCase):
         response = self.client.get(
             reverse("recipe-tags", kwargs={"recipe_pk": self.recipe1.id},),
             content_type="application/json",
-            HTTP_AUTHORIZATION=f"Token {token}",
+            HTTP_AUTHORIZATION=token,
         )
         self.assertEqual(len(response.json()), self.recipe1.tags.count())
 
@@ -769,7 +771,7 @@ class RecipeTagTest(TestCase):
             reverse("recipe-tags", kwargs={"recipe_pk": self.recipe1.id},),
             {"id": self.tag1.id},
             content_type="application/json",
-            HTTP_AUTHORIZATION=f"Token {token}",
+            HTTP_AUTHORIZATION=token,
         )
         self.assertEqual(response.status_code, 201)
 
@@ -782,7 +784,7 @@ class RecipeTagTest(TestCase):
             reverse("recipe-tags", kwargs={"recipe_pk": self.recipe1.id},),
             {"value": "new tag"},
             content_type="application/json",
-            HTTP_AUTHORIZATION=f"Token {token}",
+            HTTP_AUTHORIZATION=token,
         )
         self.assertEqual(response.status_code, 400)
 
@@ -795,7 +797,7 @@ class RecipeTagTest(TestCase):
             reverse("recipe-tags", kwargs={"recipe_pk": self.recipe1.id},),
             {"id": 38},
             content_type="application/json",
-            HTTP_AUTHORIZATION=f"Token {token}",
+            HTTP_AUTHORIZATION=token,
         )
         self.assertEqual(response.status_code, 400)
 
@@ -815,7 +817,7 @@ class RecipeTagTest(TestCase):
             ),
             {"id": 38},
             content_type="application/json",
-            HTTP_AUTHORIZATION=f"Token {token}",
+            HTTP_AUTHORIZATION=token,
         )
         self.assertEqual(response.status_code, 204)
         self.assertEqual(self.recipe1.tags.all().count(), tag_count_before_delete - 1)
