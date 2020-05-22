@@ -14,4 +14,7 @@ urlpatterns = [
         views.TokenRefreshWithCookiesView.as_view(),
         name="token_refresh",
     ),
+    path(
+        "token/logout/", views.LogoutRemoveCookiesView.as_view(), name="token_logout",
+    ),
 ]

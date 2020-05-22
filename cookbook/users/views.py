@@ -3,9 +3,30 @@
 import datetime
 import os
 from django.conf import settings
+from rest_framework import status
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 SECURE_COOKIE = os.environ.get("APP_ENV", "dev").strip('"') == "prod"
+
+
+class LogoutRemoveCookiesView(APIView):
+    """
+    provides route that removes cookies from request
+    """
+
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        """
+        /token/logout/
+        """
+        response = Response({"message": "logged out"}, status=status.HTTP_200_OK)
+        _remove_cookies_from_response(response)
+
+        return response
 
 
 class TokenObtainPairWithCookiesView(TokenObtainPairView):
@@ -18,7 +39,7 @@ class TokenObtainPairWithCookiesView(TokenObtainPairView):
         if "access" in response.data and "refresh" in response.data:
             access_token = response.data["access"]
             refresh_token = response.data["refresh"]
-            response = _add_cookies_to_response(response, access_token, refresh_token)
+            _add_cookies_to_response(response, access_token, refresh_token)
 
         else:
             response.delete_cookie("access")
@@ -42,11 +63,10 @@ class TokenRefreshWithCookiesView(TokenRefreshView):
         if "access" in response.data and "refresh" in response.data:
             access_token = response.data["access"]
             refresh_token = response.data["refresh"]
-            response = _add_cookies_to_response(response, access_token, refresh_token)
+            _add_cookies_to_response(response, access_token, refresh_token)
 
         else:
-            response.delete_cookie("access")
-            response.delete_cookie("refresh")
+            _remove_cookies_from_response(response)
 
         return response
 
@@ -72,4 +92,7 @@ def _add_cookies_to_response(response, access_token, refresh_token):
         expires=refresh_token_expires,
     )
 
-    return response
+
+def _remove_cookies_from_response(response):
+    response.delete_cookie("access")
+    response.delete_cookie("refresh")
