@@ -61,10 +61,10 @@ const actions = {
 };
 
 const getters = {
-  loggedIn: state => !!state.user,
-  username: ({ state }) => (state.user ? state.user.username : null),
-  email: ({ state }) => (state.user ? state.user.email : null),
-  isSuperUser: ({ state }) => (state.user ? state.user.is_superuser : null)
+  isLoggedIn: state => !!state.user,
+  isSuperUser: state => (state.user ? state.user.is_superuser : false),
+  username: state => (state.user ? state.user.username : null),
+  email: state => (state.user ? state.user.email : null)
 };
 
 export default {
