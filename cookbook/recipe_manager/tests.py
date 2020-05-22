@@ -532,8 +532,8 @@ class RecipeIngredientCase(TestCase):
             reverse(
                 "recipe-ingredient-detail",
                 kwargs={
-                    "recipe_pk": self.recipe1.id,
-                    "ingredient_pk": recipe_ingredient.id,
+                    "recipe_pk": recipe_ingredient.recipe_id,
+                    "ingredient_pk": recipe_ingredient.ingredient_id,
                 },
             ),
             test_recipe_ingredient,
@@ -560,8 +560,8 @@ class RecipeIngredientCase(TestCase):
             reverse(
                 "recipe-ingredient-detail",
                 kwargs={
-                    "recipe_pk": self.recipe1.id,
-                    "ingredient_pk": recipe_ingredient.id,
+                    "recipe_pk": recipe_ingredient.recipe_id,
+                    "ingredient_pk": recipe_ingredient.ingredient_id,
                 },
             ),
             test_recipe_ingredient,
