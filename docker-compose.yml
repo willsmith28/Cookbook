@@ -1,7 +1,7 @@
 version: "3.7"
 
 services:
-  web-api:
+  backend:
     build: ./cookbook
     command: /usr/local/bin/gunicorn cookbook.wsgi:application -b 0.0.0.0:8000 --workers 1 --reload
     volumes:
@@ -13,7 +13,7 @@ services:
     depends_on:
       - db
 
-  web-client:
+  client:
     build: ./client
     command: yarn serve
     volumes:
@@ -21,7 +21,15 @@ services:
     ports:
       - 8080:8080
     depends_on:
-      - web-api
+      - backend
+
+  nginx:
+    build: ./nginx
+    ports:
+      - 1337:80
+    depends_on:
+      - backend
+      - client
 
   db:
     image: postgres:12.3
