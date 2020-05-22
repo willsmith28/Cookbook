@@ -36,10 +36,10 @@ class TokenObtainPairWithCookiesView(TokenObtainPairView):
 
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
-        if "access" in response.data and "refresh" in response.data:
-            access_token = response.data["access"]
-            refresh_token = response.data["refresh"]
-            _add_cookies_to_response(response, access_token, refresh_token)
+        if all(field in response.data for field in ("access", "refresh")):
+            _add_cookies_to_response(
+                response, response.data["access"], response.data["refresh"]
+            )
 
         else:
             response.delete_cookie("access")
@@ -54,16 +54,16 @@ class TokenRefreshWithCookiesView(TokenRefreshView):
     """
 
     def post(self, request, *args, **kwargs):
-        cookie_token = request.COOKIES.get("refresh", None)
-        if cookie_token is not None:
+
+        if (cookie_token := request.COOKIES.get("refresh", None)) is not None:
             request.data["refresh"] = cookie_token
 
         response = super().post(request, *args, **kwargs)
 
-        if "access" in response.data and "refresh" in response.data:
-            access_token = response.data["access"]
-            refresh_token = response.data["refresh"]
-            _add_cookies_to_response(response, access_token, refresh_token)
+        if all(field in response.data for field in ("access", "refresh")):
+            _add_cookies_to_response(
+                response, response.data["access"], response.data["refresh"]
+            )
 
         else:
             _remove_cookies_from_response(response)
