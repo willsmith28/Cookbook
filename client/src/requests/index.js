@@ -64,73 +64,73 @@ const requests = {
     return client.get(`/recipe-manager/recipe/${id}/`);
   },
 
-  editRecipe(recipe_id, recipe) {
-    return client.put(`/recipe-manager/recipe/${recipe_id}/`, recipe);
+  editRecipe(recipe) {
+    return client.put(`/recipe-manager/recipe/${recipe.id}/`, recipe);
   },
 
-  getAllIngredientsInRecipe(recipe_id) {
-    return client.get(`/recipe-manager/recipe/${recipe_id}/ingredients/`);
+  getAllIngredientsInRecipe(recipeId) {
+    return client.get(`/recipe-manager/recipe/${recipeId}/ingredients/`);
   },
 
-  AddIngredientToRecipe(recipe_id, ingredientInRecipe) {
-    return client.post(
-      `/recipe-manager/recipe/${recipe_id}/ingredients/`,
-      ingredientInRecipe
-    );
+  AddIngredientToRecipe(recipeId, { ingredientId, ...ingredientInRecipe }) {
+    return client.post(`/recipe-manager/recipe/${recipeId}/ingredients/`, {
+      ingredient_id: ingredientId,
+      ...ingredientInRecipe
+    });
   },
 
-  getIngredientInRecipe(recipe_id, ingredient_id) {
+  getIngredientInRecipe(recipeId, ingredientId) {
     return client.get(
-      `/recipe-manager/recipe/${recipe_id}/ingredients/${ingredient_id}/`
+      `/recipe-manager/recipe/${recipeId}/ingredients/${ingredientId}/`
     );
   },
 
-  editIngredientInRecipe(ingredientInRecipe) {
+  editIngredientInRecipe(recipeId, { ingredientId, ...ingredientInRecipe }) {
     return client.put(
-      `/recipe-manager/recipe/${ingredientInRecipe.recipe_id}/ingredients/${ingredientInRecipe.ingredient_id}/`,
-      ingredientInRecipe
+      `/recipe-manager/recipe/${recipeId}/ingredients/${ingredientInRecipe.ingredientId}/`,
+      { ingredient_id: ingredientId, ...ingredientInRecipe }
     );
   },
 
-  removeIngredientFromRecipe(recipe_id, ingredient_id) {
+  removeIngredientFromRecipe(recipeId, ingredientId) {
     return client.delete(
-      `/recipe-manager/recipe/${recipe_id}/ingredients/${ingredient_id}/`
+      `/recipe-manager/recipe/${recipeId}/ingredients/${ingredientId}/`
     );
   },
 
-  getAllStepsInRecipe(recipe_id) {
-    return client.get(`/recipe-manager/recipe/${recipe_id}/steps/`);
+  getAllStepsInRecipe(recipeId) {
+    return client.get(`/recipe-manager/recipe/${recipeId}/steps/`);
   },
 
-  addStepToRecipe(recipe_id, step) {
-    return client.post(`/recipe-manager/recipe/${recipe_id}/steps/`, step);
+  addStepToRecipe(recipeId, step) {
+    return client.post(`/recipe-manager/recipe/${recipeId}/steps/`, step);
   },
 
-  getStepInRecipe(recipe_id, order) {
-    return client.get(`/recipe-manager/recipe/${recipe_id}/steps/${order}/`);
+  getStepInRecipe(recipeId, order) {
+    return client.get(`/recipe-manager/recipe/${recipeId}/steps/${order}/`);
   },
 
-  editStepInRecipe(recipe_id, step) {
+  editStepInRecipe(recipeId, step) {
     return client.put(
-      `/recipe-manager/recipe/${recipe_id}/steps/${step.order}/`,
+      `/recipe-manager/recipe/${recipeId}/steps/${step.order}/`,
       step
     );
   },
 
-  removeStepFromRecipe(recipe_id, order) {
-    return client.delete(`/recipe-manager/recipe/${recipe_id}/steps/${order}/`);
+  removeStepFromRecipe(recipeId, order) {
+    return client.delete(`/recipe-manager/recipe/${recipeId}/steps/${order}/`);
   },
 
-  getAllTagsInRecipe(recipe_id) {
-    return client.get(`/recipe-manager/recipe/${recipe_id}/tags/`);
+  getAllTagsInRecipe(recipeId) {
+    return client.get(`/recipe-manager/recipe/${recipeId}/tags/`);
   },
 
-  addTagToRecipe(recipe_id, tag) {
-    return client.post(`/recipe-manager/recipe/${recipe_id}/tags/`, tag);
+  addTagToRecipe(recipeId, tag) {
+    return client.post(`/recipe-manager/recipe/${recipeId}/tags/`, tag);
   },
 
-  removeTagFromRecipe(recipe_id, tag_id) {
-    return client.delete(`/recipe-manager/recipe/${recipe_id}/tags/${tag_id}/`);
+  removeTagFromRecipe(recipeId, tagId) {
+    return client.delete(`/recipe-manager/recipe/${recipeId}/tags/${tagId}/`);
   }
 };
 
