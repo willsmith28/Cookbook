@@ -28,8 +28,11 @@ const requests = {
     return client.get("/recipe-manager/ingredient/units/");
   },
 
-  createIngredient(ingredient) {
-    return client.post("/recipe-manager/ingredient/", ingredient);
+  createIngredient({ recipeId, ...ingredient }) {
+    return client.post("/recipe-manager/ingredient/", {
+      recipe_id: recipeId,
+      ...ingredient
+    });
   },
 
   getIngredient(id) {

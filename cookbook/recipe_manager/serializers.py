@@ -72,7 +72,7 @@ class IngredientInRecipeSerializer(serializers.Serializer):
     unit = serializers.ChoiceField(models.IngredientInRecipe.UNITS)
     specifier = serializers.CharField(max_length=256, allow_blank=True)
     ingredient_id = serializers.IntegerField()
-    recipe_id = serializers.IntegerField(required=False)
+    recipe_id = serializers.IntegerField(required=False, write_only=True)
 
     def validate_ingredient_id(self, value):
         """
@@ -109,7 +109,7 @@ class StepSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
     instruction = serializers.CharField()
     order = serializers.IntegerField(min_value=1, required=False)
-    recipe_id = serializers.IntegerField(required=False)
+    recipe_id = serializers.IntegerField(required=False, write_only=True)
 
     def create(self, validated_data):
         return models.Step.objects.create(**validated_data)
