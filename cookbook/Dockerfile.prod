@@ -11,7 +11,8 @@ ENV PYTHONDONTWRITEBYTECODE 1
 
 
 RUN apt-get update && apt-get install --no-install-recommends -yqq \
-    build-essential libpq-dev
+    build-essential \
+    libpq-dev
 
 # build dependency wheels
 RUN pip install --upgrade pip
@@ -39,7 +40,8 @@ WORKDIR ${APP_HOME}
 
 #install dependencies
 RUN apt-get update && apt-get install --no-install-recommends -yqq \
-    libpq-dev
+    libpq-dev \
+    netcat
 
 COPY --from=builder /usr/src/app/wheels /wheels
 COPY --from=builder /usr/src/app/requirements/prod.txt .

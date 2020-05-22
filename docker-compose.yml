@@ -13,6 +13,16 @@ services:
     depends_on:
       - db
 
+  web-client:
+    build: ./client
+    command: yarn serve
+    volumes:
+      - ./client:/app
+    ports:
+      - 8080:8080
+    depends_on:
+      - web-api
+
   db:
     image: postgres:12.3
     volumes:
