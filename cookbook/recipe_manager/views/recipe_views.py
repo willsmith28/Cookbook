@@ -23,10 +23,7 @@ class RecipeView(APIView):
         servings: int,
         cook_time: str,
         tags: [int,],
-        # GET
-        steps: [int,],
-        ingredients: [int,]
-        # POST only
+        # GET ONLY
         steps: [str,],
         ingredients: [
             {
@@ -73,36 +70,33 @@ class RecipeView(APIView):
         """
 
         user = request.user
-        errors, serializers = utils.validate_recipe(
-            {**request.data, "author_id": user.id}
-        )
+        data = {**request.data, "author_id": user.id}
+        errors = {}
+
+        if isinstance(tags := data.pop("tags", ()), (list, tuple)):
+            try:
+                tag_ids = tuple(int(tag_id) for tag_id in tags)
+            except ValueError:
+                errors["errors"] = {"tags": ["Must be an array of Tag IDs if provided"]}
+
+        else:
+            errors["errors"] = {"tags": ["Must be an Array of Tag IDs if provided"]}
+
+        if not (serializer := RecipeSerializer(data=data)).is_valid():
+            errors.setdefault("errors", {}).update(
+                utils.serialize_errors(serializer.errors)
+            )
 
         if errors:
-            return Response({"errors": errors}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(errors, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            with transaction.atomic():
-                recipe = serializers["recipe"].save()
+            recipe = serializer.save()
+            if tag_ids:
+                tags = models.Tag.objects.filter(id__in=tag_ids)
 
-                for serializer in serializers["ingredients"]:
-                    ingredient = serializer.data
-                    recipe.ingredients.add(
-                        models.Ingredient.objects.get(
-                            id=ingredient.pop("ingredient_id")
-                        ),
-                        through_defaults=ingredient,
-                    )
-
-                for serializer in serializers["steps"]:
-                    step = serializer.data
-                    recipe.steps.create(**step)
-
-                for tag_id in serializers["tag_ids"]:
-                    try:
-                        recipe.tags.add(models.Tag.objects.get(id=tag_id))
-
-                    except models.Tag.DoesNotExist:
-                        pass
+                if tags:
+                    recipe.tags.add(*tags)
 
         except IntegrityError as err:
             response = Response(
@@ -158,7 +152,7 @@ class RecipeDetailView(APIView):
             recipe = _query_recipe_with_relations().get(id=pk)
 
         except models.Recipe.DoesNotExist:
-            response = Response(status=status.HTTP_404_NOT_FOUND,)
+            response = Response(status=status.HTTP_404_NOT_FOUND)
 
         else:
             response = Response(
@@ -178,7 +172,7 @@ class RecipeDetailView(APIView):
             Response: DRF Response
         """
         try:
-            recipe = models.Recipe.objects.get(id=pk)
+            recipe = _query_recipe_with_relations().get(id=pk)
 
         except models.Recipe.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND,)
@@ -203,7 +197,9 @@ class RecipeDetailView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(
+            _serialize_recipe_with_relations(recipe), status=status.HTTP_200_OK
+        )
 
 
 def _query_recipe_with_relations():

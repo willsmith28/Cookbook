@@ -200,25 +200,13 @@ class RecipeTestCase(TestCase):
             "description": "some description",
             "servings": 4,
             "cook_time": "1  hour",
-            "ingredients": [
-                {
-                    "amount": 4,
-                    "unit": "n/a",
-                    "specifier": "",
-                    "ingredient_id": int(ingredient_set[0].id),
-                }
-            ],
-            "steps": ["cut chicken", "cook chicken"],
             "tags": [int(tag.id) for tag in tag_set],
         }
         self.test_invalid_recipe = {
             "name": "",
-            "description": "some description",
+            "description": {},
             "servings": "3",
-            "cook_time": "1  hour",
-            "ingredients": 23,
-            "steps": "hi",
-            "tags": 3,
+            "cook_time": 6,
         }
 
     def test_get_recipe_list(self):
@@ -230,7 +218,7 @@ class RecipeTestCase(TestCase):
         recipes = response.json()
         self.assertEqual(len(recipes), models.Recipe.objects.count())
 
-    def test_post_valid_recipe_with_relations(self):
+    def test_post_valid_recipe(self):
         """
         POST /recipe/ valid data
         """
@@ -238,24 +226,6 @@ class RecipeTestCase(TestCase):
         response = self.client.post(
             reverse("recipe"),
             self.test_valid_recipe,
-            content_type="application/json",
-            HTTP_AUTHORIZATION=token,
-        )
-        response_data = response.json()
-        recipe_from_db = models.Recipe.objects.get(name=self.test_valid_recipe["name"])
-        self.assertEqual(response_data["id"], recipe_from_db.id)
-
-    def test_post_valid_recipe_without_relations(self):
-        """
-        POST /recipe/ valid data
-        """
-        token = get_token()
-        response = self.client.post(
-            reverse("recipe"),
-            {
-                field: self.test_valid_recipe[field]
-                for field in constants.REQUIRED_RECIPE_FIELDS
-            },
             content_type="application/json",
             HTTP_AUTHORIZATION=token,
         )
@@ -276,35 +246,6 @@ class RecipeTestCase(TestCase):
         )
         self.assertEqual(response.status_code, 400)
 
-    def test_post_valid_recipe_invalid_steps(self):
-        """
-        POST /recipe/ invalid data
-        """
-        token = get_token()
-        response = self.client.post(
-            reverse("recipe"),
-            {**self.test_valid_recipe, "steps": self.test_invalid_recipe["steps"],},
-            content_type="application/json",
-            HTTP_AUTHORIZATION=token,
-        )
-        self.assertEqual(response.status_code, 400)
-
-    def test_post_valid_recipe_invalid_ingredients(self):
-        """
-        POST /recipe/ invalid data
-        """
-        token = get_token()
-        response = self.client.post(
-            reverse("recipe"),
-            {
-                **self.test_valid_recipe,
-                "ingredients": self.test_invalid_recipe["ingredients"],
-            },
-            content_type="application/json",
-            HTTP_AUTHORIZATION=token,
-        )
-        self.assertEqual(response.status_code, 400)
-
     def test_post_valid_recipe_invalid_tags(self):
         """
         POST /recipe/ invalid data
@@ -312,7 +253,7 @@ class RecipeTestCase(TestCase):
         token = get_token()
         response = self.client.post(
             reverse("recipe"),
-            {**self.test_valid_recipe, "tags": self.test_invalid_recipe["tags"],},
+            {**self.test_valid_recipe, "tags": 3},
             content_type="application/json",
             HTTP_AUTHORIZATION=token,
         )
