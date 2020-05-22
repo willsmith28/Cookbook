@@ -10,7 +10,6 @@ class JWTCookieAuthentication(JWTAuthentication):
     """
 
     def get_header(self, request):
-        header_token = super().get_header(request)
         cookie_token = request.COOKIES.get("access", None)
 
-        return cookie_token if cookie_token is not None else header_token
+        return cookie_token if cookie_token is not None else super().get_header(request)
