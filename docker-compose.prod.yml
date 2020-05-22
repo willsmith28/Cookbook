@@ -1,13 +1,16 @@
 version: "3.7"
 
 services:
-  web-api:
+  backend:
     build:
       context: ./cookbook
       dockerfile: Dockerfile.prod
     command: gunicorn cookbook.wsgi:application --bind 0.0.0.0:8000
-    expose: :
-      - 8000
+    expose:
+      - "8000"
+    networks:
+      - database
+      - reverse-proxy
     env_file:
       - ./.env.prod
     depends_on:
@@ -17,6 +20,8 @@ services:
     image: postgres:12.3
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - database
     env_file:
       - ./.env.postgres.prod
 
@@ -24,8 +29,14 @@ services:
     build: ./nginx
     ports:
       - 1337:80
+    networks:
+      - reverse-proxy
     depends_on:
-      - web-api
+      - backend
 
 volumes:
   postgres_data:
+
+networks:
+  database:
+  reverse-proxy:
