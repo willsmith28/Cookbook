@@ -106,9 +106,8 @@ class StepSerializer(serializers.Serializer):
         serializers ([type]): [description]
     """
 
-    id = serializers.IntegerField(read_only=True)
     instruction = serializers.CharField()
-    order = serializers.IntegerField(min_value=1, required=False)
+    order = serializers.IntegerField(min_value=1, required=False, write_only=True)
     recipe_id = serializers.IntegerField(required=False, write_only=True)
 
     def create(self, validated_data):
