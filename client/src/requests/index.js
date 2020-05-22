@@ -8,8 +8,12 @@ const requests = {
     });
   },
 
-  refreshTokens(refresh) {
-    return client.post("/token/refresh/", { refresh });
+  refreshTokens() {
+    return client.post("/token/refresh/");
+  },
+
+  logout() {
+    return client.post("/token/logout/");
   },
 
   getUserInfo() {

@@ -1,64 +1,70 @@
 import requests from "../../requests";
 
 const state = {
-  access: null,
-  refresh: null
+  user: null
 };
 
 const mutations = {
-  SET_ACCESS_TOKEN(state, access) {
-    localStorage.setItem("access", access);
-    state.access = access;
+  SET_USER(state, user) {
+    state.user = user;
+    localStorage.setItem("user", JSON.stringify(user));
   },
-  SET_REFRESH_TOKEN(state, refresh) {
-    localStorage.setItem("refresh", refresh);
-    state.refresh = refresh;
-  },
-  REMOVE_TOKENS(state) {
-    localStorage.removeItem("access");
-    localStorage.removeItem("refresh");
-    state.refresh = null;
-    state.access = null;
+  REMOVE_USER(state) {
+    state.user = null;
+    localStorage.removeItem("user");
   }
 };
 
 const actions = {
+  async decodeJWT({ commit }, token) {
+    const user = JSON.parse(atob(token.split(".")[0]));
+    commit("SET_USER", user);
+  },
+
   async login({ commit, dispatch }, { username, password }) {
     try {
       const {
-        data: { access, refresh }
+        data: { access }
       } = await requests.login(username, password);
-      await dispatch("setAccessToken", access);
-      await dispatch("setRefreshToken", refresh);
+      dispatch("decodeJWT", access);
     } catch (error) {
-      commit("REMOVE_TOKENS");
+      commit("REMOVE_USER");
       return Promise.reject(error);
     }
   },
 
-  async setAccessToken({ commit }, access) {
-    commit("SET_ACCESS_TOKEN", access);
+  async logout({ commit }) {
+    try {
+      await requests.logout();
+      commit("REMOVE_USER");
+    } catch (error) {
+      return Promise.reject(error);
+    }
   },
 
-  async setRefreshToken({ commit }, refresh) {
-    commit("SET_REFRESH_TOKEN", refresh);
+  async refreshToken({ commit, dispatch }) {
+    try {
+      const { access } = await requests.refreshTokens();
+      dispatch("decodeJWT", access);
+    } catch (error) {
+      commit("REMOVE_USER");
+      return Promise.reject(error);
+    }
   },
 
-  logout({ commit }) {
-    commit("REMOVE_TOKENS");
+  async checkLocalStorageForUser({ commit }) {
+    const user = localStorage.getItem("user");
+    if (user) {
+      commit("SET_USER", JSON.parse(user));
+    }
   }
 };
 
 const getters = {
-  loggedIn: state => !!state.access,
-  jwt: state => state.access,
-  jwtData: state =>
-    state.access ? JSON.parse(atob(state.access.split(".")[0])) : null,
-  username: ({ getters }) =>
-    getters("jwt") ? getters("jwtData")["username"] : null,
-  email: ({ getters }) => (getters("jwt") ? getters("jwtData")["email"] : null),
-  isSuperUser: ({ getters }) =>
-    getters("jwt") ? getters("jwtData")["is_superuser"] : null
+  loggedIn: state => !!state.user,
+  username: ({ state }) => (state.user ? state.user.username : null),
+  email: ({ state }) => (state.user ? state.user.email : null),
+  isSuperUser: ({ state }) => (state.user ? state.user.is_superuser : null)
 };
 
 export default {

@@ -11,50 +11,25 @@ const client = axios.create({
   }
 });
 
-const getAccessToken = () => localStorage.getItem("access");
-const getRefreshToken = () => localStorage.getItem("refresh");
-
-const authInterceptor = config => {
-  const token = getAccessToken();
-
-  config.headers["Authorization"] = token
-    ? `Authorization: Bearer ${token}`
-    : "";
-
-  return config;
-};
-
 const refreshTokenOnUnAuthorized = error => {
-  const refreshToken = getRefreshToken();
-  if (!refreshToken || error.response.status !== 401) {
-    return Promise.reject(error);
-  }
-  if (error.config.url.includes("/token/refresh")) {
-    router.push({ name: "home" });
-    return Promise.reject(error);
-  }
-  const { config: originalRequest } = error;
-  if (refreshToken) {
-    return client
-      .post("/token/refresh/", { refreshToken })
-      .then(({ data }) => {
-        localStorage.setItem("access", data.access);
-        originalRequest.headers[
-          "Authorization"
-        ] = `Authorization: Bearer ${data.access}`;
+  if (error.response.status === 401) {
+    if (error.config.url.includes("/token/refresh")) {
+      router.push({ name: "login" });
+      return Promise.reject(error);
+    }
+    return store
+      .dispatch("user/refreshToken")
+      .then(() => {
+        const { config: originalRequest } = error;
         return axios(originalRequest);
       })
-      .catch(error => {
-        console.log(error);
-      });
+      .catch(error => Promise.reject(error));
   }
   return Promise.reject(error);
 };
 
 const responseSuccessInterceptor = response => response;
-const requestErrorInterceptor = error => Promise.reject(error);
 
-client.interceptors.request.use(authInterceptor, requestErrorInterceptor);
 client.interceptors.response.use(
   responseSuccessInterceptor,
   refreshTokenOnUnAuthorized

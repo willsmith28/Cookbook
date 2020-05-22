@@ -151,7 +151,8 @@ const actions = {
         dispatch("fetchIngredientUnits"),
         dispatch("fetchAllTags"),
         dispatch("fetchTagKinds"),
-        dispatch("fetchAllRecipes")
+        dispatch("fetchAllRecipes"),
+        dispatch("user/checkLocalStorageForUser")
       ]);
     } catch (error) {
       handleError(error);
