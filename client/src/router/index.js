@@ -26,7 +26,7 @@ const routes = [
     component: CreateEditRecipe
   },
   {
-    path: "/recipe/:id",
+    path: "/recipe/:recipeId",
     name: "recipe-detail",
     component: () =>
       import(
