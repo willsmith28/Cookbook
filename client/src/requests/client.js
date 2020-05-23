@@ -3,7 +3,7 @@ import router from "../router";
 import store from "../store";
 
 const client = axios.create({
-  baseURL: "http://127.0.0.1:8000/api",
+  baseURL: `http://${location.hostname}:1337/api`,
   "Access-Control-Allow-Origin": "*",
   headers: {
     post: { "Content-Type": "application/json" },
