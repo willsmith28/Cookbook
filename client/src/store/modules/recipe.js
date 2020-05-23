@@ -202,8 +202,18 @@ const actions = {
     }
   },
   async fetchIngredientUnits({ commit }) {
+    // GET ingredients/units/
     try {
-      const { data: units } = await requests.getIngredientUnits();
+      const { data } = await requests.getIngredientUnits();
+      const units = new Map();
+      for (const [groupName, group] of data) {
+        units.set(groupName, []);
+
+        // eslint-disable-next-line no-unused-vars
+        for (const [itemAbbreviation, itemName] of group.entries()) {
+          units.get(groupName).push(itemAbbreviation);
+        }
+      }
       commit("ADD_INGREDIENT_UNITS", units);
     } catch (error) {
       handleError(error);
@@ -411,18 +421,14 @@ const getters = {
     const {
       ingredients: { [`${id}`]: ingredient }
     } = state;
-    return Object.assign({}, ingredient);
+    return ingredient ? Object.assign({}, ingredient) : null;
   },
 
   getIngredientName: state => id => {
     const {
-      ingredients: {
-        [`${id}`]: {
-          ingredient: { name }
-        }
-      }
+      ingredients: { [`${id}`]: ingredient }
     } = state;
-    return name;
+    return ingredient ? ingredient.name : null;
   },
 
   ingredients: state => Object.values(state.ingredients),
@@ -430,18 +436,7 @@ const getters = {
   ingredientNames: state =>
     Object.values(state.ingredients).map(ingredient => ingredient.name),
 
-  ingredientUnits(state) {
-    const units = new Map();
-    for (const [groupName, group] of state.ingredientUnits) {
-      units.set(groupName, []);
-
-      // eslint-disable-next-line no-unused-vars
-      for (const [itemAbbreviation, itemName] of group.entries()) {
-        units.get(groupName).push(itemAbbreviation);
-      }
-    }
-    return units;
-  },
+  ingredientUnits: state => [...state.ingredientUnits],
 
   tagKinds: state => [...state.tagKinds],
 
@@ -451,7 +446,7 @@ const getters = {
     const {
       tags: { [`${id}`]: tag }
     } = state;
-    return Object.assign({}, tag);
+    return tag ? Object.assign({}, tag) : null;
   },
 
   tags: state => Object.values(state.tags),
@@ -466,18 +461,14 @@ const getters = {
     const {
       recipes: { [`${id}`]: recipe }
     } = state;
-    return Object.assign({}, recipe);
+    return recipe ? Object.assign({}, recipe) : null;
   },
 
   getRecipeName: state => id => {
     const {
-      recipes: {
-        [`${id}`]: {
-          recipe: { name }
-        }
-      }
+      recipes: { [`${id}`]: recipe }
     } = state;
-    return name;
+    return recipe ? recipe.name : null;
   },
 
   recipeCount: state => Object.keys(state.recipes).length,
@@ -486,28 +477,28 @@ const getters = {
     const {
       ingredientsInRecipe: { [`${recipeId}`]: ingredient }
     } = state;
-    return Object.values(ingredient);
+    return ingredient ? Object.values(ingredient) : [];
   },
 
   ingredientInRecipeCount: state => recipeId => {
     const {
       ingredientsInRecipe: { [`${recipeId}`]: ingredientsInRecipe }
     } = state;
-    return Object.keys(ingredientsInRecipe).length;
+    return ingredientsInRecipe ? Object.keys(ingredientsInRecipe).length : 0;
   },
 
   getSteps: state => recipeId => {
     const {
       steps: { [`${recipeId}`]: steps }
     } = state;
-    return [...steps];
+    return steps ? [...steps] : [];
   },
 
   stepInRecipeCount: state => recipeId => {
     const {
       steps: { [`${recipeId}`]: steps }
     } = state;
-    return steps.length;
+    return steps ? steps.length : 0;
   }
 };
 
