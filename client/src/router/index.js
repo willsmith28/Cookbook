@@ -5,7 +5,7 @@ Vue.use(VueRouter);
 
 const CreateEditRecipe = () =>
   import(
-    /* webpackChunkName: "recipe-create-edit" */ "../views/CreateEditRecipe.vue"
+    /* webpackChunkName: "recipe-create-edit" */ "../views/recipe/CreateEditRecipe.vue"
   );
 
 const routes = [
@@ -30,7 +30,7 @@ const routes = [
     name: "recipe-detail",
     component: () =>
       import(
-        /* webpackChunkName: "recipe-detail" */ "../views/RecipeDetail.vue"
+        /* webpackChunkName: "recipe-detail" */ "../views/recipe/RecipeDetail.vue"
       ),
     props: true,
     children: [

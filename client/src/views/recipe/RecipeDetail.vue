@@ -1,6 +1,9 @@
 <template>
   <div v-if="!!recipe" class="md-layout md-alignment-top-center">
-    <recipe-overview-card :recipe-id="id" class="md-layout-item md-size-90" />
+    <recipe-overview-card
+      :recipe-id="recipeId"
+      class="md-layout-item md-size-90"
+    />
 
     <md-card
       v-if="!!numberIngredientsInRecipe"
@@ -15,7 +18,7 @@
       <md-card-expand v-if="numberIngredientsInRecipe > expandGreaterThan">
         <md-card-expand-content>
           <md-card-content>
-            <ingredients-in-recipe-list :recipe-id="id" />
+            <ingredients-in-recipe-list :recipe-id="recipeId" />
           </md-card-content>
         </md-card-expand-content>
         <md-card-actions>
@@ -27,7 +30,7 @@
         </md-card-actions>
       </md-card-expand>
       <md-card-content v-else>
-        <ingredients-in-recipe-list :recipe-id="id" />
+        <ingredients-in-recipe-list :recipe-id="recipeId" />
       </md-card-content>
     </md-card>
 
@@ -55,13 +58,13 @@
 
         <md-card-expand-content>
           <md-card-content>
-            <steps-list :recipe-id="id" />
+            <steps-list :recipe-id="recipeId" />
           </md-card-content>
         </md-card-expand-content>
       </md-card-expand>
 
       <md-card-content v-else>
-        <steps-list :recipe-id="id" />
+        <steps-list :recipe-id="recipeId" />
       </md-card-content>
     </md-card>
   </div>
@@ -75,7 +78,7 @@ import { mapActions, mapGetters } from "vuex";
 export default {
   components: { IngredientsInRecipeList, StepsList, RecipeOverviewCard },
   props: {
-    id: {
+    recipeId: {
       type: [Number, String],
       required: true
     }
@@ -85,16 +88,16 @@ export default {
   }),
   computed: {
     recipe() {
-      return this.getRecipe(this.id);
+      return this.getRecipe(this.recipeId);
     },
     tags() {
       return this.recipe.tags.map(tagID => this.getTag(tagID));
     },
     numberStepsInRecipe() {
-      return this.stepInRecipeCount(this.id);
+      return this.stepInRecipeCount(this.recipeId);
     },
     numberIngredientsInRecipe() {
-      return this.ingredientInRecipeCount(this.id);
+      return this.ingredientInRecipeCount(this.recipeId);
     },
     pluralizeFormatIngredient() {
       return `Ingredient${this.numberIngredientsInRecipe === 1 ? "" : "s"}`;
