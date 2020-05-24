@@ -8,7 +8,7 @@
         <span>
           {{ ingredient.amount }}
           {{ ingredient.unit }}
-          <ingredient-name-link :ingredient-id="ingredient.ingredient_id" />
+          <ingredient-name-link :ingredient-id="ingredient.ingredientId" />
           {{ ingredient.specifier }}
         </span>
       </li>
