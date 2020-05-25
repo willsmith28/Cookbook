@@ -56,11 +56,9 @@ class TokenRefreshWithCookiesView(TokenRefreshView):
     Override Token Refresh to prefer Cookies
     """
 
-    serializer_class = TokenObtainPairSerializerWithClaims
-
     def post(self, request, *args, **kwargs):
 
-        if (cookie_token := request.COOKIES.get("refresh", None)) is not None:
+        if cookie_token := request.COOKIES.get("refresh"):
             request.data["refresh"] = cookie_token
 
         response = super().post(request, *args, **kwargs)
@@ -83,6 +81,7 @@ def _add_cookies_to_response(response, access_token, refresh_token):
     response.set_cookie(
         "access",
         value=f"Bearer {access_token}",
+        path="/api",
         httponly=True,
         samesite="Strict",
         secure=SECURE_COOKIE,
@@ -91,6 +90,7 @@ def _add_cookies_to_response(response, access_token, refresh_token):
     response.set_cookie(
         "refresh",
         value=refresh_token,
+        path="/api/token/refresh",
         httponly=True,
         samesite="Strict",
         secure=SECURE_COOKIE,

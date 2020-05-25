@@ -1,6 +1,7 @@
 """
 app authentication
 """
+from rest_framework import HTTP_HEADER_ENCODING
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 
@@ -10,6 +11,10 @@ class JWTCookieAuthentication(JWTAuthentication):
     """
 
     def get_header(self, request):
-        cookie_token = request.COOKIES.get("access", None)
+        cookie_token = request.COOKIES.get("access")
 
-        return cookie_token if cookie_token is not None else super().get_header(request)
+        return (
+            cookie_token.encode(HTTP_HEADER_ENCODING)
+            if cookie_token
+            else super().get_header(request)
+        )
