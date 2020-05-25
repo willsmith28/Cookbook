@@ -6,12 +6,12 @@
         <span class="md-list-item-text">Recipes</span>
       </md-list-item>
 
-      <md-list-item v-if="loggedIn" :to="{ name: 'recipe-create' }">
+      <md-list-item v-if="isLoggedIn" :to="{ name: 'recipe-create' }">
         <md-icon>library_add</md-icon>
         <span class="md-list-item-text">Create Recipe</span>
       </md-list-item>
 
-      <md-list-item v-if="!loggedIn" :to="{ name: 'login' }">
+      <md-list-item v-if="!isLoggedIn" :to="{ name: 'login' }">
         <md-icon>account_box</md-icon>
         <span class="md-list-item-text">Login</span>
       </md-list-item>
@@ -29,7 +29,7 @@ import { mapGetters, mapActions } from "vuex";
 export default {
   name: "NavigationList",
   computed: {
-    ...mapGetters("user", ["loggedIn"])
+    ...mapGetters("user", ["isLoggedIn"])
   },
   methods: {
     ...mapActions("user", ["logout"])
