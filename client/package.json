@@ -36,10 +36,10 @@
       "node": true
     },
     "extends": [
+      "eslint:recommended",
       "plugin:vue/recommended",
       "plugin:prettier/recommended",
-      "prettier/vue",
-      "eslint:recommended"
+      "prettier/vue"
     ],
     "parserOptions": {
       "parser": "babel-eslint"
