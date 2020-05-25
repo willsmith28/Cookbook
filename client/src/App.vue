@@ -15,7 +15,6 @@
       <md-app-drawer :md-active.sync="menuVisible" md-persistent="full">
         <md-toolbar class="md-transparent" md-elevation="0">
           Navigation
-
           <div class="md-toolbar-section-end">
             <md-button class="md-icon-button md-dense" @click="toggleMenu">
               <md-icon>keyboard_arrow_left</md-icon>
@@ -38,29 +37,21 @@ import { mapActions, mapGetters } from "vuex";
 import NavigationList from "@/components/NavigationList";
 export default {
   components: { NavigationList },
-  data() {
-    return {
-      menuVisible: false
-    };
-  },
+  data: () => ({
+    menuVisible: false
+  }),
   computed: {
-    ...mapGetters("user", ["loggedIn"])
+    ...mapGetters("user", ["isLoggedIn"])
   },
   created() {
-    const username = localStorage.getItem("username");
-
-    if (username) {
-      this.setUsername(username);
-    }
-
-    Promise.resolve(this.initState());
+    Promise.allSettled([this.initRecipes(), this.checkLocalStorageForUser()]);
   },
   methods: {
     toggleMenu() {
       this.menuVisible = !this.menuVisible;
     },
-    ...mapActions("recipe", ["initState"]),
-    ...mapActions("user", ["setUsername", "logout"])
+    ...mapActions("recipe", ["initRecipes"]),
+    ...mapActions("user", ["logout", "checkLocalStorageForUser"])
   }
 };
 </script>
