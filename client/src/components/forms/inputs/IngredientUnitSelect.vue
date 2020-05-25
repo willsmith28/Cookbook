@@ -12,11 +12,11 @@
       :label="unitGroup[0]"
     >
       <md-option
-        v-for="(unitText, unitIndex) of unitGroup[1]"
+        v-for="(unit, unitIndex) of unitGroup[1]"
         :key="unitIndex"
-        :value="unitText"
+        :value="unit[0]"
       >
-        {{ unitText }}
+        {{ unit[1] }}
       </md-option>
     </md-optgroup>
   </md-select>

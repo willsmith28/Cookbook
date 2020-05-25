@@ -10,7 +10,7 @@
     <template slot="md-autocomplete-empty" slot-scope="{ term }">
       <span>
         <span>No ingredient matching "{{ term }}" could be found.</span>
-        <md-button @click="createIngredient({ name, recipeId: null })">
+        <md-button @click="addIngredient(term)">
           Create it!
         </md-button>
       </span>
