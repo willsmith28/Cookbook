@@ -1,10 +1,16 @@
 import requests from "../../requests";
+import router from "../../router";
 
 const state = {
   user: null
 };
 
 const mutations = {
+  SET_USER_FROM_TOKEN(state, token) {
+    const userJson = atob(token.split(".")[0]);
+    localStorage.setItem("user", userJson);
+    state.user = JSON.parse(atob(token.split(".")[0]));
+  },
   SET_USER(state, user) {
     state.user = user;
     localStorage.setItem("user", JSON.stringify(user));
@@ -16,17 +22,12 @@ const mutations = {
 };
 
 const actions = {
-  async decodeJWT({ commit }, token) {
-    const user = JSON.parse(atob(token.split(".")[0]));
-    commit("SET_USER", user);
-  },
-
-  async login({ commit, dispatch }, { username, password }) {
+  async login({ commit }, { username, password }) {
     try {
       const {
         data: { access }
       } = await requests.login(username, password);
-      dispatch("decodeJWT", access);
+      commit("SET_USER_FROM_TOKEN", access);
     } catch (error) {
       commit("REMOVE_USER");
       return Promise.reject(error);
@@ -44,10 +45,13 @@ const actions = {
 
   async refreshToken({ commit, dispatch }) {
     try {
-      const { access } = await requests.refreshTokens();
-      dispatch("decodeJWT", access);
+      const {
+        data: { access }
+      } = await requests.refreshTokens();
+      commit("SET_USER_FROM_TOKEN", access);
     } catch (error) {
-      commit("REMOVE_USER");
+      await dispatch("logout");
+      router.push({ name: "login" });
       return Promise.reject(error);
     }
   },
@@ -61,10 +65,10 @@ const actions = {
 };
 
 const getters = {
-  isLoggedIn: state => !!state.user,
-  isSuperUser: state => (state.user ? state.user.is_superuser : false),
-  username: state => (state.user ? state.user.username : null),
-  email: state => (state.user ? state.user.email : null)
+  isLoggedIn: ({ user }) => !!user,
+  isSuperUser: ({ user }) => (user ? user.is_superuser : false),
+  username: ({ user }) => (user ? user.username : null),
+  email: ({ user }) => (user ? user.email : null)
 };
 
 export default {

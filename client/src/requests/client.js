@@ -1,5 +1,4 @@
 import axios from "axios";
-import router from "../router";
 import store from "../store";
 
 const client = axios.create({
@@ -11,27 +10,28 @@ const client = axios.create({
   }
 });
 
-const refreshTokenOnUnAuthorized = error => {
-  if (error.response.status === 401) {
-    if (error.config.url.includes("/token/refresh")) {
-      router.push({ name: "login" });
-      return Promise.reject(error);
-    }
-    return store
-      .dispatch("user/refreshToken")
-      .then(() => {
-        const { config: originalRequest } = error;
-        return axios(originalRequest);
-      })
-      .catch(error => Promise.reject(error));
+const refreshTokenOnUnAuthorized = async error => {
+  const { config: originalRequest } = error;
+  if (
+    error.response.status !== 401 ||
+    originalRequest.url.includes("/token/refresh") ||
+    originalRequest._retry
+  ) {
+    return Promise.reject(error);
   }
-  return Promise.reject(error);
+
+  try {
+    await store.dispatch("user/refreshToken");
+  } catch (error) {
+    return Promise.reject(error);
+  }
+
+  originalRequest._retry = true;
+  return axios(originalRequest);
 };
 
-const responseSuccessInterceptor = response => response;
-
 client.interceptors.response.use(
-  responseSuccessInterceptor,
+  response => response,
   refreshTokenOnUnAuthorized
 );
 
