@@ -8,6 +8,7 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from .serializers import TokenObtainPairSerializerWithClaims
 
 SECURE_COOKIE = os.environ.get("APP_ENV", "dev").strip('"') == "prod"
 
@@ -23,7 +24,7 @@ class LogoutRemoveCookiesView(APIView):
         """
         /token/logout/
         """
-        response = Response({"message": "logged out"}, status=status.HTTP_200_OK)
+        response = Response(status=status.HTTP_204_NO_CONTENT)
         _remove_cookies_from_response(response)
 
         return response
@@ -33,6 +34,8 @@ class TokenObtainPairWithCookiesView(TokenObtainPairView):
     """
     TokenObtainPairView extension to set cookies
     """
+
+    serializer_class = TokenObtainPairSerializerWithClaims
 
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
@@ -52,6 +55,8 @@ class TokenRefreshWithCookiesView(TokenRefreshView):
     """
     Override Token Refresh to prefer Cookies
     """
+
+    serializer_class = TokenObtainPairSerializerWithClaims
 
     def post(self, request, *args, **kwargs):
 
