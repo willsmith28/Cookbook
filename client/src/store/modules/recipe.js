@@ -67,8 +67,8 @@ const mutations = {
   ADD_RECIPE(state, recipe) {
     addRecipeToState(state, recipe);
   },
-  ADD_RECIPE_FROM_LIST(state, recipeList) {
-    for (const recipe in recipeList) {
+  ADD_RECIPES_FROM_LIST(state, recipeList) {
+    for (const recipe of recipeList) {
       addRecipeToState(state, recipe);
     }
   },
@@ -168,11 +168,11 @@ const actions = {
   async initRecipes({ dispatch }) {
     try {
       await Promise.allSettled([
+        dispatch("fetchAllRecipes"),
         dispatch("fetchAllIngredients"),
         dispatch("fetchIngredientUnits"),
         dispatch("fetchAllTags"),
-        dispatch("fetchTagKinds"),
-        dispatch("fetchAllRecipes")
+        dispatch("fetchTagKinds")
       ]);
     } catch (error) {
       handleError(error);
@@ -207,8 +207,8 @@ const actions = {
       const units = new Map();
       for (const [groupName, group] of data) {
         units.set(groupName, []);
-        for (const units of group.entries()) {
-          units.get(groupName).push(units);
+        for (const unitValues of group) {
+          units.get(groupName).push(unitValues);
         }
       }
       commit("ADD_INGREDIENT_UNITS", units);
@@ -256,7 +256,7 @@ const actions = {
     // GET /recipes/
     try {
       const { data: recipes } = await requests.getAllRecipes();
-      commit("ADD_RECIPE_FROM_LIST", recipes);
+      commit("ADD_RECIPES_FROM_LIST", recipes);
     } catch (error) {
       handleError(error);
     }
