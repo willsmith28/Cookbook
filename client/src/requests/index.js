@@ -113,9 +113,9 @@ const requests = {
     return client.get(`/recipe-manager/recipes/${recipeId}/steps/${order}/`);
   },
 
-  editStepInRecipe(recipeId, step) {
+  editStepInRecipe(recipeId, order, step) {
     return client.put(
-      `/recipe-manager/recipes/${recipeId}/steps/${step.order}/`,
+      `/recipe-manager/recipes/${recipeId}/steps/${order}/`,
       step
     );
   },
