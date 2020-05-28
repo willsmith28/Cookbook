@@ -90,7 +90,7 @@ const requests = {
 
   editIngredientInRecipe(recipeId, { ingredientId, ...ingredientInRecipe }) {
     return client.put(
-      `/recipe-manager/recipes/${recipeId}/ingredients/${ingredientInRecipe.ingredientId}/`,
+      `/recipe-manager/recipes/${recipeId}/ingredients/${ingredientId}/`,
       { ingredient_id: ingredientId, ...ingredientInRecipe }
     );
   },
