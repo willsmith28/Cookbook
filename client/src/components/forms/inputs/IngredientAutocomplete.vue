@@ -8,25 +8,27 @@
   >
     <label>Ingredient</label>
     <template slot="md-autocomplete-empty" slot-scope="{ term }">
-      <span>
-        <span>No ingredient matching "{{ term }}" could be found.</span>
-        <md-button @click="addIngredient(term)">
-          Create it!
-        </md-button>
-      </span>
+      <a @click="addIngredient(term)">Create {{ term }} ingredient!</a>
     </template>
-    <div v-show="value" class="md-helper-text">
-      selected Ingredient {{ name }}
-    </div>
+    <span v-show="value" class="md-helper-text">
+      selected Ingredient
+      <ingredient-name-link :ingredient-id="value" />
+    </span>
+    <span v-show="showRequiredError" class="md-error">
+      Ingredient is required
+    </span>
   </md-autocomplete>
 </template>
 
 <script>
 import { mapGetters, mapActions } from "vuex";
+import IngredientNameLink from "@/components/IngredientNameLink";
 export default {
   name: "IngredientAutocomplete",
+  components: { IngredientNameLink },
   props: {
-    value: { type: [Number, String], required: true, default: null }
+    value: { type: [Number, String], default: null },
+    showRequiredError: { type: Boolean, default: false }
   },
   data: () => ({ name: null }),
   computed: {
@@ -39,9 +41,18 @@ export default {
     ...mapGetters("recipe", ["ingredients", "ingredientNames", "getIngredient"])
   },
   created() {
-    if (this.value) {
-      const ingredient = this.getIngredient(this.ingredientId);
-      this.name = ingredient ? ingredient.name : null;
+    if (this.ingredients.length) {
+      if (this.value) {
+        const ingredient = this.getIngredient(this.value);
+        this.name = ingredient ? ingredient.name : null;
+      }
+    } else {
+      this.fetchAllIngredients().then(() => {
+        if (this.value) {
+          const ingredient = this.getIngredient(this.value);
+          this.name = ingredient ? ingredient.name : null;
+        }
+      });
     }
   },
   methods: {
@@ -57,7 +68,7 @@ export default {
         //TODO emit error?
       }
     },
-    ...mapActions("recipe", ["createIngredient"])
+    ...mapActions("recipe", ["createIngredient", "fetchAllIngredients"])
   }
 };
 </script>

@@ -1,5 +1,6 @@
 import Vue from "vue";
 import VueRouter from "vue-router";
+import store from "../store";
 
 Vue.use(VueRouter);
 
@@ -23,24 +24,28 @@ const routes = [
   {
     path: "/recipe/create",
     name: "recipe-create",
-    component: CreateEditRecipe
+    component: CreateEditRecipe,
+    beforeEnter: isLoggedIn
   },
   {
     path: "/recipe/:id/edit",
     name: "recipe-edit",
     component: CreateEditRecipe,
+    beforeEnter: isLoggedIn,
     props: true
   },
   {
     path: "/recipe/:id/ingredients",
     name: "recipe-edit-ingredients",
     component: CreateEditRecipe,
+    beforeEnter: isLoggedIn,
     props: true
   },
   {
     path: "/recipe/:id/steps",
     name: "recipe-edit-steps",
     component: CreateEditRecipe,
+    beforeEnter: isLoggedIn,
     props: true
   },
   {
@@ -65,3 +70,11 @@ const router = new VueRouter({
 });
 
 export default router;
+
+const isLoggedIn = (to, from, next) => {
+  if (store.getters["user/isLoggedIn"]) {
+    next();
+  } else {
+    next({ name: "login" });
+  }
+};

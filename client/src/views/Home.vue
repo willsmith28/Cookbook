@@ -11,13 +11,29 @@
 </template>
 
 <script>
-import { mapGetters } from "vuex";
+import { mapGetters, mapActions } from "vuex";
 import RecipeOverviewCard from "@/components/RecipeOverviewCard";
 export default {
   name: "Home",
   components: { RecipeOverviewCard },
   computed: {
     ...mapGetters("recipe", ["recipeIDs"])
+  },
+  created() {
+    this.fetchAllRecipes();
+  },
+  methods: {
+    ...mapActions("recipe", [
+      "fetchAllRecipes",
+      "fetchAllIngredients",
+      "fetchAllTags"
+    ])
   }
 };
 </script>
+
+<style scoped>
+.recipe-overview-card {
+  margin-top: 1em;
+}
+</style>

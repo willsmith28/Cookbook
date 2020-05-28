@@ -1,7 +1,7 @@
 <template>
   <md-select
     id="unit"
-    v-model="value"
+    v-model="selectedUnit"
     name="unit"
     required
     @md-selected="$emit('input', $event)"
@@ -23,12 +23,24 @@
 </template>
 
 <script>
-import { mapGetters } from "vuex";
+import { mapGetters, mapActions } from "vuex";
 export default {
   name: "IngredientUnitSelect",
-  props: { value: { type: String, required: true, default: null } },
+  props: { value: { type: [String], default: null } },
+  data: () => ({ selectedUnit: null }),
   computed: {
     ...mapGetters("recipe", ["ingredientUnits"])
+  },
+  created() {
+    if (!this.ingredientUnits.length) {
+      this.fetchIngredientUnits();
+    }
+    if (this.value) {
+      this.selectedUnit = this.value;
+    }
+  },
+  methods: {
+    ...mapActions("recipe", ["fetchIngredientUnits"])
   }
 };
 </script>
