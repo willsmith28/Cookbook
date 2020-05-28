@@ -1,111 +1,91 @@
 <template>
-  <div>
+  <div v-if="!loading">
     <md-steppers md-sync-route md-dynamic-height>
       <md-step
         id="first"
-        :to="
-          recipeId
-            ? { name: 'recipe-edit', params: { recipeId } }
-            : { name: 'recipe-create' }
-        "
-        :md-label="`${recipeId ? 'Edit' : 'Create'} Recipe`"
+        :to="recipeStepLink"
+        :md-label="`${id ? 'Edit' : 'Create'} Recipe`"
         exact
       >
-        <recipe-form :recipe-id="recipeId" />
+        <recipe-form :recipe-id="id" />
       </md-step>
       <md-step
         id="second"
-        :to="
-          recipeId
-            ? { name: 'recipe-edit-ingredients', params: { recipeId } }
-            : null
-        "
+        :to="ingredientStepLink"
         md-label="Edit Ingredients"
-        :md-editable="recipeId"
+        :md-editable="!!id"
         exact
       >
-        <ingredient-in-recipe-form v-if="recipeId" :recipe-id="recipeId" />
+        <ingredient-in-recipe-form v-if="id" :recipe-id="id" />
       </md-step>
       <md-step
         id="third"
-        :to="
-          recipeId ? { name: 'recipe-edit-steps', params: { recipeId } } : null
-        "
+        :to="stepStepLink"
         md-label="Edit Steps"
-        :md-editable="recipeId"
+        :md-editable="!!id"
         exact
-      ></md-step>
+      >
+        <step-form v-if="id" :recipe-id="id" />
+      </md-step>
     </md-steppers>
   </div>
 </template>
 
 <script>
 import { mapGetters, mapActions } from "vuex";
-import { validationMixin } from "vuelidate";
-import { required } from "vuelidate/lib/validators";
 import RecipeForm from "@/components/forms/RecipeForm";
 import IngredientInRecipeForm from "@/components/forms/IngredientInRecipeForm";
+import StepForm from "@/components/forms/StepForm";
 export default {
-  components: { RecipeForm, IngredientInRecipeForm },
-  mixins: [validationMixin],
-  props: { recipeId: { type: [String, Number], default: null } },
-  data() {
-    return {
-      formData: {
-        ingredients: [],
-        steps: [],
-        tags: []
-      }
-    };
+  components: { RecipeForm, IngredientInRecipeForm, StepForm },
+  props: { id: { type: [String, Number], default: null } },
+  data: () => ({ loading: true }),
+  computed: {
+    recipeStepLink() {
+      return this.id
+        ? { name: "recipe-edit", params: { id: this.id } }
+        : { name: "recipe-create" };
+    },
+    ingredientStepLink() {
+      return this.id
+        ? { name: "recipe-edit-ingredients", params: { id: this.id } }
+        : null;
+    },
+    stepStepLink() {
+      return this.id
+        ? { name: "recipe-edit-steps", params: { id: this.id } }
+        : null;
+    },
+    ...mapGetters("recipe", ["getRecipe", "tagCount", "ingredientCount"])
   },
-  validations: {
-    formData: {
-      ingredients: {
-        $each: {
-          amount: { required },
-          unit: { required },
-          ingredient_id: { required },
-          specifier: {}
-        }
-      },
-      steps: {
-        $each: {
-          instruction: { required }
-        }
-      },
-      tags: {
-        $each: { value: { required }, kind: { required } }
-      }
+  created() {
+    if (!this.ingredientCount) {
+      this.fetchAllIngredients();
+    }
+    if (!this.tagCount) {
+      this.fetchAllTags();
+    }
+
+    if (!this.id) {
+      this.loading = false;
+      return;
+    }
+
+    const recipe = this.getRecipe(this.id);
+    if (recipe) {
+      this.loading = false;
+    } else {
+      this.fetchRecipeDetail(this.id).then(() => {
+        this.loading = false;
+      });
     }
   },
-  computed: {
-    ...mapGetters("recipe", [
-      "ingredients",
-      "ingredientUnits",
-      "getRecipe",
-      "getIngredientsInRecipe",
-      "getSteps"
-    ])
-  },
   methods: {
-    getValidationClass(fieldName) {
-      const field = this.$v.formData[fieldName];
-      if (field) {
-        return { "md-invalid": field.$invalid && field.$dirty };
-      }
-    },
-    addIngredient() {
-      this.ingredients.push({
-        amount: null,
-        unit: null,
-        ingredientId: null,
-        specifier: null
-      });
-    },
-    removeIngredient(index) {
-      this.ingredients.splice(index, 1);
-    },
-    ...mapActions("recipe", ["fetchIngredientUnits"])
+    ...mapActions("recipe", [
+      "fetchRecipeDetail",
+      "fetchAllIngredients",
+      "fetchAllTags"
+    ])
   }
 };
 </script>
