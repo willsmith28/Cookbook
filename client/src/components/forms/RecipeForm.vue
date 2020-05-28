@@ -1,6 +1,6 @@
 <template>
   <div>
-    <form @submit.prevent="submitRecipe()">
+    <form @submit.prevent="validateRecipe()">
       <div>
         <md-card>
           <md-card-content class="md-layout md-gutter md-alignment-top-center">
@@ -86,6 +86,7 @@
 import { mapGetters, mapActions } from "vuex";
 import { validationMixin } from "vuelidate";
 import { required } from "vuelidate/lib/validators";
+import getValidationClass from "@/validations/getValidationClass";
 export default {
   name: "RecipeForm",
   mixins: [validationMixin],
@@ -105,12 +106,14 @@ export default {
     cook_time: { required }
   },
   computed: {
+    stateRecipe() {
+      return this.getRecipe(this.recipeId);
+    },
     ...mapGetters("recipe", ["getRecipe"])
   },
   created() {
-    console.log("recipe form");
     if (this.recipeId) {
-      const recipe = this.getRecipe(this.recipeId);
+      let recipe = this.getRecipe(this.recipeId);
       if (recipe) {
         this.name = recipe.name;
         this.description = recipe.description;
@@ -121,10 +124,7 @@ export default {
   },
   methods: {
     getValidationClass(fieldName) {
-      const { [fieldName]: field } = this.$v;
-      if (field) {
-        return { "md-invalid": field.$invalid && field.$dirty };
-      }
+      return getValidationClass(fieldName, this.$v);
     },
     validateRecipe() {
       this.$v.$touch();
@@ -148,17 +148,16 @@ export default {
             recipe
           });
         } else {
-          recipeId = await this.createRecipe(recipe);
+          await this.createRecipe({
+            recipe,
+            nextRoute: "recipe-edit-ingredients"
+          });
         }
-        this.$router.push({
-          name: "recipe-edit-ingredients",
-          params: { recipeId }
-        });
       } catch (error) {
         //TODO show error message in snackbar or something
       }
     },
-    ...mapActions("recipe", ["createRecipe", "editRecipe"])
+    ...mapActions("recipe", ["createRecipe", "editRecipe", "fetchRecipeDetail"])
   }
 };
 </script>
