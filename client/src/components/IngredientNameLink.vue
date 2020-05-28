@@ -1,13 +1,13 @@
 <template>
-  <span>
-    <span v-if="!!ingredient.recipe_id">
+  <span v-if="ingredientId && ingredient">
+    <span v-if="!!ingredient.recipeId">
       <router-link
         :to="{
           name: 'recipe-detail',
-          props: { id: ingredient.recipe_id }
+          props: { id: ingredient.recipeId }
         }"
       >
-        {{ getRecipeName(ingredient.recipe_id) }}
+        {{ getRecipeName(ingredient.recipeId) }}
       </router-link>
     </span>
     <b v-else>
@@ -23,7 +23,7 @@ export default {
   props: {
     ingredientId: {
       type: [String, Number],
-      required: true
+      default: null
     }
   },
   computed: {
