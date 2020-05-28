@@ -44,13 +44,12 @@ export default {
     ...mapGetters("user", ["isLoggedIn"])
   },
   created() {
-    Promise.allSettled([this.initRecipes(), this.checkLocalStorageForUser()]);
+    this.checkLocalStorageForUser();
   },
   methods: {
     toggleMenu() {
       this.menuVisible = !this.menuVisible;
     },
-    ...mapActions("recipe", ["initRecipes"]),
     ...mapActions("user", ["logout", "checkLocalStorageForUser"])
   }
 };
