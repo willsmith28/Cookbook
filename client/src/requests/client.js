@@ -14,7 +14,8 @@ const refreshTokenOnUnAuthorized = async error => {
   const { config: originalRequest } = error;
   if (
     error.response.status !== 401 ||
-    originalRequest.url.includes("/token/refresh") ||
+    originalRequest.url.includes("api/token/refresh") ||
+    originalRequest.url.includes("api/token/logout") ||
     originalRequest._retry
   ) {
     return Promise.reject(error);
