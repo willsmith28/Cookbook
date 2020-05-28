@@ -165,19 +165,6 @@ const mutations = {
 };
 
 const actions = {
-  async initRecipes({ dispatch }) {
-    try {
-      await Promise.allSettled([
-        dispatch("fetchAllRecipes"),
-        dispatch("fetchAllIngredients"),
-        dispatch("fetchIngredientUnits"),
-        dispatch("fetchAllTags"),
-        dispatch("fetchTagKinds")
-      ]);
-    } catch (error) {
-      handleError(error);
-    }
-  },
   async fetchAllIngredients({ commit }) {
     // GET /ingredients/
     try {
@@ -204,11 +191,11 @@ const actions = {
     // GET ingredients/units/
     try {
       const { data } = await requests.getIngredientUnits();
-      const units = new Map();
+      const units = {};
       for (const [groupName, group] of data) {
-        units.set(groupName, []);
+        units[groupName] = [];
         for (const unitValues of group) {
-          units.get(groupName).push(unitValues);
+          units[groupName].push(unitValues);
         }
       }
       commit("ADD_INGREDIENT_UNITS", units);
@@ -269,7 +256,7 @@ const actions = {
       if (nextRoute) {
         router.push({
           name: nextRoute,
-          params: { recipeId: createdRecipe.id }
+          params: { id: createdRecipe.id }
         });
       }
     } catch (error) {
@@ -318,18 +305,18 @@ const actions = {
         recipeId,
         ingredient
       );
-      commit("ADD_INGREDIENT_TO_RECIPE", ingredientInRecipe);
+      commit("ADD_INGREDIENT_IN_RECIPE", ingredientInRecipe);
     } catch (error) {
       handleError(error);
       return Promise.reject(error);
     }
   },
-  async editIngredientInRecipe({ commit }, { recipeId, ingredientInRecipe }) {
+  async editIngredientInRecipe({ commit }, { recipeId, ingredient }) {
     // PUT /recipes/pk/ingredients/pk/
     try {
       const {
         data: changedIngredientInRecipe
-      } = await requests.editIngredientInRecipe(recipeId, ingredientInRecipe);
+      } = await requests.editIngredientInRecipe(recipeId, ingredient);
       commit("ADD_INGREDIENT_IN_RECIPE", {
         recipeId,
         changedIngredientInRecipe
@@ -440,7 +427,7 @@ const getters = {
     Object.values(state.ingredients).map(ingredient => ingredient.name),
 
   ingredientUnits: state =>
-    state.ingredientUnits ? [...state.ingredientUnits.entries()] : [],
+    state.ingredientUnits ? Object.entries(state.ingredientUnits) : [],
 
   tagKinds: state => [...state.tagKinds],
 
@@ -480,10 +467,10 @@ const getters = {
 
   getIngredientsInRecipe: state => recipeId => {
     const {
-      ingredientsInRecipe: { [`${recipeId}`]: ingredient }
+      ingredientsInRecipe: { [`${recipeId}`]: ingredients }
     } = state;
-    return ingredient
-      ? Object.values(ingredient).map(item => Object.assign({}, item))
+    return ingredients
+      ? Object.values(ingredients).map(item => Object.assign({}, item))
       : [];
   },
 
@@ -523,7 +510,7 @@ const addRecipeToState = (state, { ingredients, steps, ...recipe }) => {
   const ingredientsInRecipe = Object.assign(
     {},
     ...ingredients.map(({ ingredient_id, ...ingredient }) => ({
-      [ingredient_id]: { ingredientId: ingredient_id, ingredient }
+      [`${ingredient_id}`]: { ingredientId: ingredient_id, ...ingredient }
     }))
   );
   Vue.set(state.ingredientsInRecipe, recipeId, ingredientsInRecipe);
