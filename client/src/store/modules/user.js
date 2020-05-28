@@ -7,9 +7,9 @@ const state = {
 
 const mutations = {
   SET_USER_FROM_TOKEN(state, token) {
-    const userJson = atob(token.split(".")[0]);
+    const userJson = atob(token.split(".")[1]);
     localStorage.setItem("user", userJson);
-    state.user = JSON.parse(atob(token.split(".")[0]));
+    state.user = JSON.parse(userJson);
   },
   SET_USER(state, user) {
     state.user = user;
@@ -37,10 +37,10 @@ const actions = {
   async logout({ commit }) {
     try {
       await requests.logout();
-      commit("REMOVE_USER");
     } catch (error) {
-      return Promise.reject(error);
+      console.log(error);
     }
+    commit("REMOVE_USER");
   },
 
   async refreshToken({ commit, dispatch }) {
