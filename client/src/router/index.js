@@ -26,32 +26,37 @@ const routes = [
     component: CreateEditRecipe
   },
   {
-    path: "/recipe/:recipeId",
+    path: "/recipe/:id/edit",
+    name: "recipe-edit",
+    component: CreateEditRecipe,
+    props: true
+  },
+  {
+    path: "/recipe/:id/ingredients",
+    name: "recipe-edit-ingredients",
+    component: CreateEditRecipe,
+    props: true
+  },
+  {
+    path: "/recipe/:id/steps",
+    name: "recipe-edit-steps",
+    component: CreateEditRecipe,
+    props: true
+  },
+  {
+    path: "/recipe/:id",
     name: "recipe-detail",
     component: () =>
       import(
         /* webpackChunkName: "recipe-detail" */ "../views/recipe/RecipeDetail.vue"
       ),
-    props: true,
-    children: [
-      {
-        path: "edit",
-        name: "recipe-edit",
-        component: CreateEditRecipe,
-        children: [
-          {
-            path: "ingredients",
-            name: "recipe-edit-ingredients",
-            component: CreateEditRecipe
-          },
-          {
-            path: "steps",
-            name: "recipe-edit-steps",
-            component: CreateEditRecipe
-          }
-        ]
-      }
-    ]
+    props: true
+  },
+  {
+    path: "*",
+    name: "404",
+    component: () =>
+      import(/* webpackChunkName: "not-found" */ "../views/NotFound.vue")
   }
 ];
 
