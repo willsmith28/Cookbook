@@ -1,5 +1,5 @@
 <template>
-  <md-card>
+  <md-card class="recipe-overview-card">
     <md-card-header>
       <div class="md-title">
         {{ recipe.name }}
@@ -22,7 +22,16 @@
     </md-card-content>
 
     <md-card-actions>
-      <md-button :to="`/recipe/${recipeId}/`">
+      <md-button
+        v-if="onDetailPage"
+        :to="{ name: 'recipe-edit', params: { id: recipeId } }"
+      >
+        Edit
+      </md-button>
+      <md-button
+        v-else
+        :to="{ name: 'recipe-detail', params: { id: recipeId } }"
+      >
         See Details
       </md-button>
     </md-card-actions>
