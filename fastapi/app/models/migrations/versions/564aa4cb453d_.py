@@ -28,7 +28,7 @@ def upgrade():
         sa.Column(
             "created_on", sa.DateTime(), server_default=sa.text("now()"), nullable=False
         ),
-        sa.Column("last_updated_on", sa.DateTime(), nullable=False),
+        sa.Column("last_updated_on", sa.DateTime()),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("name"),
     )
@@ -57,9 +57,6 @@ def upgrade():
         sa.ForeignKeyConstraint(["recipe_id"], ["recipes.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["tag_id"], ["tags.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("recipe_id", "tag_id", name="recipe_tag_primary_key"),
-        sa.UniqueConstraint(
-            "tag_id", "recipe_id", name="recipe_tag_reverse_unique_constraint"
-        ),
     )
     op.create_table(
         "steps",
@@ -82,11 +79,6 @@ def upgrade():
         sa.ForeignKeyConstraint(["recipe_id"], ["recipes.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint(
             "recipe_id", "ingredient_id", name="ingredient_in_recipe_primary_key"
-        ),
-        sa.UniqueConstraint(
-            "ingredient_id",
-            "recipe_id",
-            name="ingredient_in_recipe_reverse_unique_constraint",
         ),
     )
     # ### end Alembic commands ###

@@ -1,3 +1,6 @@
+"""
+Defines db tables and connection
+"""
 import datetime
 import os
 import databases
@@ -14,7 +17,20 @@ DATABASE_URL = f"postgresql://{USER}:{PASSWORD}@{HOST}:{PORT}/{DB}"
 
 metadata = sqlalchemy.MetaData()
 
-database = databases.Database(DATABASE_URL)
+
+async def get_database_connection() -> databases.Database:
+    """gets connection to database
+
+    Returns:
+        databases.Database: connected db connection
+
+    Yields:
+        Iterator[databases.Database]: [description]
+    """
+    async with databases.Database(DATABASE_URL) as database:
+        async with database.transaction():
+            yield database
+
 
 ingredients = sqlalchemy.Table(
     "ingredients",
@@ -48,9 +64,7 @@ recipes = sqlalchemy.Table(
     sqlalchemy.Column(
         "created_on", sqlalchemy.DateTime, server_default=func.now(), nullable=False
     ),
-    sqlalchemy.Column(
-        "last_updated_on", sqlalchemy.DateTime, onupdate=func.now(), nullable=False
-    ),
+    sqlalchemy.Column("last_updated_on", sqlalchemy.DateTime, onupdate=func.now()),
 )
 
 ingredients_in_recipe = sqlalchemy.Table(
@@ -75,11 +89,6 @@ ingredients_in_recipe = sqlalchemy.Table(
     sqlalchemy.PrimaryKeyConstraint(
         "recipe_id", "ingredient_id", name="ingredient_in_recipe_primary_key"
     ),
-    sqlalchemy.UniqueConstraint(
-        "ingredient_id",
-        "recipe_id",
-        name="ingredient_in_recipe_reverse_unique_constraint",
-    ),
 )
 
 recipe_tags = sqlalchemy.Table(
@@ -91,9 +100,6 @@ recipe_tags = sqlalchemy.Table(
     sqlalchemy.Column("tag_id", sqlalchemy.ForeignKey("tags.id", ondelete="CASCADE")),
     sqlalchemy.PrimaryKeyConstraint(
         "recipe_id", "tag_id", name="recipe_tag_primary_key"
-    ),
-    sqlalchemy.UniqueConstraint(
-        "tag_id", "recipe_id", name="recipe_tag_reverse_unique_constraint"
     ),
 )
 
