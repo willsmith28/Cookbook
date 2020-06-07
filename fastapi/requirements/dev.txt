@@ -1,0 +1,5 @@
+-r ./prod.txt
+pylint==2.4.4
+black==19.10b0
+requests==2.23.0
+pytest==5.4.3
