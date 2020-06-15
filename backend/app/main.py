@@ -1,15 +1,11 @@
 from fastapi import FastAPI, Depends
-from .models.db import get_database_connection
+from .models import db
 from .routers import ingredients, tags, recipes
+
 
 app = FastAPI()
 
-
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
-
-
+db.init_app(app)
 app.include_router(
     ingredients.router, prefix="/ingredients", tags=["ingredients"], dependencies=[]
 )
