@@ -1,46 +1,47 @@
-# from sqlalchemy.sql.expression import exists, func
-# from .database import db
+from sqlalchemy.sql.expression import func
+from . import models
 
-# ###############
-# # Query helpers
-# ###############
-# async def _recipe_exists(database: databases.Database, recipe_id: int) -> bool:
-#     query = exists(db.recipes.select().where(db.recipes.c.id == recipe_id)).select()
-#     return await database.execute(query)
-
-
-# async def _ingredient_in_recipe_exists(
-#     database: databases.Database, recipe_id: int, ingredient_id: int
-# ) -> bool:
-#     query = exists(
-#         db.ingredients_in_recipe.select().where(
-#             db.ingredients_in_recipe.c.recipe_id == recipe_id,
-#             db.ingredients_in_recipe.c.ingredient_id == ingredient_id,
-#         )
-#     ).select()
-#     return await database.execute(query)
+###############
+# Query helpers
+###############
+async def recipe_exists(recipe_id: int) -> bool:
+    return await models.db.scalar(
+        models.db.exists().where(models.Recipes.id == recipe_id).select()
+    )
 
 
-# async def _tag_exists(database: databases.Database, tag_id: int) -> bool:
-#     query = exists(db.tags.select().where(db.tags.c.id == tag_id)).select()
-#     return await database.execute(query)
+async def ingredient_in_recipe_exists(recipe_id: int, ingredient_id: int) -> bool:
+    return await models.db.scalar(
+        models.db.exists()
+        .where(
+            models.IngredientInRecipe.recipe_id == recipe_id,
+            models.IngredientInRecipe.ingredient_id == ingredient_id,
+        )
+        .select()
+    )
 
 
-# async def _step_in_recipe_exists(
-#     database: databases.Database, recipe_id: int, order: int
-# ) -> bool:
-#     query = exists(
-#         db.steps.select().where(
-#             db.steps.c.recipe_id == recipe_id, db.steps.c.order == order
-#         )
-#     ).select()
-#     return await database.execute(query)
+async def tag_exists(tag_id: int) -> bool:
+    return await models.db.scalar(models.db.exists().where(models.Tags.id == tag_id))
 
 
-# async def _step_count(database: databases.Database, recipe_id: int) -> int:
-#     step_count_query = (
-#         db.steps.select()
-#         .where(db.steps.c.recipe_id == recipe_id)
-#         .with_only_columns([func.count()])
-#     )
-#     return await database.execute(step_count_query)
+async def ingredient_exists(ingredient_id: int) -> bool:
+    return await models.db.scalar(
+        models.db.exists().where(models.Ingredient.id == ingredient_id)
+    )
+
+
+async def step_in_recipe_exists(recipe_id: int, order: int) -> bool:
+    return await models.db.scalar(
+        models.db.exists()
+        .where(models.Step.recipe_id == recipe_id, models.Step.order == order)
+        .select()
+    )
+
+
+async def step_count(recipe_id: int) -> int:
+    step_count_query = models.db.func.count(models.Step.id)
+    return await models.db.scalar(
+        models.db.select([step_count_query]).where(models.Step.recipe_id == recipe_id)
+    )
+
