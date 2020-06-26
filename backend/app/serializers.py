@@ -2,6 +2,7 @@
 serializer models
 """
 from typing import Optional, List, Union
+from uuid import UUID
 from datetime import datetime
 from decimal import Decimal
 from pydantic import BaseModel, validator
@@ -40,18 +41,18 @@ class UnprocessableErrorMessage(BaseModel):
 
 
 class Ingredient(BaseModel):
-    id: int
+    id: UUID
     name: str
-    recipe_id: Optional[int]
+    recipe_id: Optional[UUID]
 
 
 class IngredientCreate(BaseModel):
     name: str
-    recipe_id: Optional[int] = None
+    recipe_id: Optional[UUID] = None
 
 
 class Tag(BaseModel):
-    id: int
+    id: UUID
     value: str
     kind: str
 
@@ -62,14 +63,14 @@ class TagCreate(BaseModel):
 
 
 class AddTagToRecipe(BaseModel):
-    id: int
+    id: UUID
 
 
 class IngredientInRecipe(BaseModel):
     amount: Union[int, float, Decimal]
     unit: str
     specifier: str
-    ingredient_id: int
+    ingredient_id: UUID
 
     _positive_amount = validator("amount", allow_reuse=True)(positive_number)
 
@@ -84,7 +85,7 @@ class Step(BaseModel):
 
 
 class Recipe(BaseModel):
-    id: int
+    id: UUID
     name: str
     description: str
     servings: int
@@ -94,7 +95,7 @@ class Recipe(BaseModel):
 
 
 class RecipeWithRelations(BaseModel):
-    id: int
+    id: UUID
     name: str
     description: str
     servings: int
@@ -104,7 +105,7 @@ class RecipeWithRelations(BaseModel):
 
     ingredients: List[IngredientInRecipe]
     steps: List[str]
-    tags: List[int]
+    tags: List[UUID]
 
 
 class RecipeCreate(BaseModel):
