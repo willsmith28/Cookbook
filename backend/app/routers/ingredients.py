@@ -1,105 +1,94 @@
-# from typing import List, Union
-
-# from sqlite3 import IntegrityError
-# from sqlalchemy.sql.expression import exists
-
-# from asyncpg.exceptions import IntegrityConstraintViolationError
+from typing import List, Union
+from asyncpg.exceptions import IntegrityConstraintViolationError
 from fastapi import APIRouter, Depends
+from fastapi.responses import JSONResponse
+from ..serializers import Ingredient, IngredientCreate, ErrorMessage
+from ..constants import INGREDIENT_UNITS
+from .. import models, utils
 
-# from fastapi.responses import JSONResponse
-# from ..database.serializers import Ingredient, IngredientCreate, ErrorMessage
-# from ..database import db
-# from ..constants import INGREDIENT_UNITS
-
-# NOT_FOUND_RESPONSE = {"message": "Ingredient not found."}
+NOT_FOUND_RESPONSE = {"message": "Ingredient not found."}
 
 router = APIRouter()
 
-# ##############
-# # /ingredients
-# ##############
-# @router.get("/", tags=["ingredients"], response_model=List[Ingredient])
-# async def get_ingredients(database=Depends(db),):
-#     query = db.ingredients.select()
-#     return await database.fetch_all(query)
+##############
+# /ingredients
+##############
+@router.get("/", tags=["ingredients"], response_model=List[Ingredient])
+async def get_ingredients():
+    """Get list of ingredients
+
+    Returns:
+        tuple[dict]: collection of ingredients
+    """
+    ingredients = await models.Ingredient.query.gino.all()
+    return tuple(ingredient.to_dict() for ingredient in ingredients)
 
 
-# @router.post(
-#     "/",
-#     tags=["ingredients"],
-#     response_model=Ingredient,
-#     responses={422: {"model": ErrorMessage}},
-#     status_code=201,
-# )
-# async def create_ingredient(
-#     ingredient: IngredientCreate, database=Depends(db),
-# ):
-#     query = db.ingredients.insert().values(**ingredient.dict())
-#     try:
-#         created_ingredient_id = await database.execute(query)
+@router.post(
+    "/",
+    tags=["ingredients"],
+    response_model=Ingredient,
+    responses={422: {"model": ErrorMessage}},
+    status_code=201,
+)
+async def create_ingredient(ingredient: IngredientCreate):
+    try:
+        created_ingredient = await models.Ingredient.create(**ingredient.dict())
 
-#     except (IntegrityError, IntegrityConstraintViolationError) as error:
-#         return JSONResponse(status_code=422, content={"message": error.__cause__})
+    except IntegrityConstraintViolationError as error:
+        response = JSONResponse(status_code=422, content={"message": str(error)})
 
-#     return {**ingredient.dict(), "id": created_ingredient_id}
+    else:
+        response = created_ingredient.to_dict()
 
-
-# ###################################
-# # /ingredients/{ingredient_id: int}
-# ###################################
-# @router.get(
-#     "/{ingredient_id}",
-#     tags=["ingredients"],
-#     response_model=Ingredient,
-#     responses={404: {"model": ErrorMessage}},
-# )
-# async def get_ingredient_detail(
-#     ingredient_id: int, database=Depends(db),
-# ):
-#     query = db.ingredients.select().where(db.ingredients.c.id == ingredient_id)
-#     ingredient = await database.fetch_one(query)
-
-#     return (
-#         ingredient
-#         if ingredient
-#         else JSONResponse(status_code=404, content=NOT_FOUND_RESPONSE)
-#     )
+    return response
 
 
-# @router.put(
-#     "/{ingredient_id}",
-#     tags=["ingredients"],
-#     response_model=Ingredient,
-#     responses={404: {"model": ErrorMessage}, 422: {"model": ErrorMessage}},
-# )
-# async def edit_ingredient(
-#     ingredient_id: int, ingredient: IngredientCreate, database=Depends(db),
-# ):
-#     query = exists(
-#         db.ingredients.select().where(db.ingredients.c.id == ingredient_id)
-#     ).select()
-#     ingredient_exists = await database.execute(query)
-#     if not ingredient_exists:
-#         return JSONResponse(status_code=404, content=NOT_FOUND_RESPONSE)
-
-#     query = (
-#         db.ingredients.update()
-#         .values(**ingredient.dict())
-#         .where(db.ingredients.c.id == ingredient_id)
-#     )
-#     try:
-#         await database.execute(query)
-#     except (IntegrityError, IntegrityConstraintViolationError) as error:
-#         return JSONResponse(status_code=422, content={"message": error.__cause__})
-
-#     return {**ingredient.dict(), "id": ingredient_id}
+###################################
+# /ingredients/{ingredient_id: int}
+###################################
+@router.get(
+    "/{ingredient_id}",
+    tags=["ingredients"],
+    response_model=Ingredient,
+    responses={404: {"model": ErrorMessage}},
+)
+async def get_ingredient_detail(ingredient_id: str):
+    ingredient = await models.Ingredient.get(ingredient_id)
+    return (
+        ingredient.to_dict()
+        if ingredient
+        else JSONResponse(status_code=404, content=NOT_FOUND_RESPONSE)
+    )
 
 
-# ####################
-# # /ingredients/units
-# ####################
-# @router.get(
-#     "/units", tags=["ingredients"], response_model=List[Union[str, List[List[str]]]]
-# )
-# def get_ingredient_units():
-#     return INGREDIENT_UNITS
+@router.put(
+    "/{ingredient_id}",
+    tags=["ingredients"],
+    response_model=Ingredient,
+    responses={404: {"model": ErrorMessage}, 422: {"model": ErrorMessage}},
+)
+async def edit_ingredient(ingredient_id: str, ingredient: IngredientCreate):
+    if not (db_ingredient := await models.Ingredient.get(ingredient_id)):
+        return JSONResponse(status_code=404, content=NOT_FOUND_RESPONSE)
+
+    try:
+        await db_ingredient.update(**ingredient.dict()).apply()
+
+    except IntegrityConstraintViolationError as error:
+        response = JSONResponse(status_code=422, content={"message": error.__cause__})
+
+    else:
+        response = db_ingredient.to_dict()
+
+    return response
+
+
+####################
+# /ingredients/units
+####################
+@router.get(
+    "/units", tags=["ingredients"], response_model=List[Union[str, List[List[str]]]]
+)
+def get_ingredient_units():
+    return INGREDIENT_UNITS
